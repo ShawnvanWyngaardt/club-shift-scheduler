@@ -50,3 +50,33 @@ def get_club_or_404(session: Session, club_id: int) -> Club:
 def health() -> Health:
     """Lets us (and the host) check the server is running."""
     return Health(status="ok")
+
+
+@app.post("/api/clubs", response_model=ClubWithToken, status_code=201)
+def create_club(data: ClubCreate, session: SessionDep) -> Club:
+    club = Club.model_validate(data)
+    session.add(club)
+    session.commit()
+    session.refresh(club)
+    return club
+
+
+@app.get("/api/clubs/{club_id}", response_model=ClubPublic)
+def read_club(club_id: int, session: SessionDep) -> Club:
+    return get_club_or_404(session, club_id)
+
+
+@app.post("/api/clubs/{club_id}/members", response_model=MemberWithToken, status_code=201)
+def add_member(club_id: int, data: MemberCreate, session: SessionDep) -> Member:
+    get_club_or_404(session, club_id)
+    member = Member.model_validate(data, update={"club_id": club_id})
+    session.add(member)
+    session.commit()
+    session.refresh(member)
+    return member
+
+
+@app.get("/api/clubs/{club_id}/members", response_model=list[MemberPublic])
+def list_members(club_id: int, session: SessionDep) -> list[Member]:
+    get_club_or_404(session, club_id)
+    return list(session.exec(select(Member).where(Member.club_id == club_id)))
