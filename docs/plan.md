@@ -205,6 +205,8 @@ Every choice below has a rejected alternative and a reason; add a row whenever t
 | 8   | Points reset each season                                   | Lifetime points                                        | Stops hoarding                                                                                                                     |
 | 9   | Clubs only; each solver rule is its own pluggable function | Clubs and small business at once; one monolithic model | Clear focus this week; a business rule set (rest periods, contract hours, skills, cost) becomes a documented v2 on the same engine |
 
+| 10 | AI-assisted build: code explained and reviewed, marked as boilerplate or must-understand | Writing every line by hand; using AI without stating it | A working, deployed product within the week, while still being able to explain every important line; stated openly in the README and case study |
+
 ## Case study capture
 
 Write the case study while building, not after: five short journal entries beat one reconstructed story.
