@@ -80,3 +80,41 @@ def add_member(club_id: int, data: MemberCreate, session: SessionDep) -> Member:
 def list_members(club_id: int, session: SessionDep) -> list[Member]:
     get_club_or_404(session, club_id)
     return list(session.exec(select(Member).where(Member.club_id == club_id)))
+
+
+@app.post("/api/clubs/{club_id}/shift-types", response_model=ShiftTypePublic, status_code=201)
+def add_shift_type(club_id: int, data: ShiftTypeCreate, session: SessionDep) -> ShiftType:
+    get_club_or_404(session, club_id)
+    shift_type = ShiftType.model_validate(data, update={"club_id": club_id})
+    session.add(shift_type)
+    session.commit()
+    session.refresh(shift_type)
+    return shift_type
+
+
+@app.get("/api/clubs/{club_id}/shift-types", response_model=list[ShiftTypePublic])
+def list_shift_types(club_id: int, session: SessionDep) -> list[ShiftType]:
+    get_club_or_404(session, club_id)
+    return list(session.exec(select(ShiftType).where(ShiftType.club_id == club_id)))
+
+
+@app.post("/api/clubs/{club_id}/shifts", response_model=ShiftPublic, status_code=201)
+def add_shift(club_id: int, data: ShiftCreate, session: SessionDep) -> Shift:
+    get_club_or_404(session, club_id)
+    shift_type = session.get(ShiftType, data.shift_type_id)
+    if shift_type is None or shift_type.club_id != club_id:
+        raise HTTPException(
+            status_code=404, detail="Shift type not found in this club")
+    shift = Shift.model_validate(data, update={"club_id": club_id})
+    session.add(shift)
+    session.commit()
+    session.refresh(shift)
+    return shift
+
+
+@app.get("/api/clubs/{club_id}/shifts", response_model=list[ShiftPublic])
+def list_shifts(club_id: int, session: SessionDep) -> list[Shift]:
+    get_club_or_404(session, club_id)
+    statement = select(Shift).where(
+        Shift.club_id == club_id).order_by(Shift.starts_at)
+    return list(session.exec(statement))
