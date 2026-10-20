@@ -16,6 +16,6 @@
 
 - **Built:**
 - **Decision:**
-- **Snag:**
+- **Snag:** Ran into issue where vscode could not resolve the path for the solver in pytest, but the tests passed fine when running `uv run pytest -v`.
 - **Learned:**
 - **AI collaboration:** Made use of Claude to validate assumptions and troubleshoot where my knowledge and experience was lacking.
