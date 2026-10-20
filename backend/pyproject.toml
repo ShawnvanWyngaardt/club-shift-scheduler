@@ -8,3 +8,11 @@ dependencies = [
     "fastapi[standard]>=0.147.0",
     "sqlmodel>=0.0.48",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [".backend"]
