@@ -113,3 +113,44 @@ class MyShift(SQLModel):
     starts_at: datetime
     ends_at: datetime
     available: bool
+
+
+# ---------- Assignments and points ----------
+class Assignment(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    shift_id: int | None = Field(foreign_key="shift.id", index=True)
+    member_id: int | None = Field(foreign_key="member.id", index=True)
+    status: str = Field(default="assigned")  # assigned, done, no_show
+
+
+class AssignmentPublic(SQLModel):
+    id: int
+    shift_id: int
+    member_id: int
+    status: str
+
+
+class PointsEntry(SQLModel, table=True):
+    """Append-only ledger: a member's balance is the sum of their entries."""
+    id: int | None = Field(default=None, primary_key=True)
+    member_id: int = Field(foreign_key="member.id", index=True)
+    change: int
+    reason: str = Field(max_length=200)
+    created_at: datetime = Field(default_factory=datetime.now)
+
+
+# ---------- Schedule proposal ----------
+class ProposedAssignment(SQLModel):
+    shift_id: int
+    member_id: int
+    member_name: str
+
+
+class UnfilledShift(SQLModel):
+    shift_id: int
+    missing: int
+
+
+class Proposal(SQLModel):
+    assignments: list[ProposedAssignment]
+    unfilled: list[UnfilledShift]
