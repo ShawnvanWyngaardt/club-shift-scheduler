@@ -93,3 +93,23 @@ class Shift(ShiftBase, table=True):
 class ShiftPublic(ShiftBase):
     id: int
     shift_type_id: int
+
+
+# ---------- Availability ----------
+class Availability(SQLModel, table=True):
+    """One row means: this member can do this shift. No row means unavailable."""
+    member_id: int = Field(foreign_key="member.id", primary_key=True)
+    shift_id: int = Field(foreign_key="shift.id", primary_key=True)
+
+
+class AvailabilityUpdate(SQLModel):
+    shift_ids: list[int]
+
+
+class MyShift(SQLModel):
+    """A shift as one member sees it, with their own answer."""
+    id: int
+    shift_type: str
+    starts_at: datetime
+    ends_at: datetime
+    available: bool
