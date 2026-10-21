@@ -8,6 +8,8 @@ from sqlmodel import Session, select
 
 from database import create_tables, get_session
 from models import (
+    Availability,
+    AvailabilityUpdate,
     Club,
     ClubCreate,
     ClubPublic,
@@ -17,6 +19,7 @@ from models import (
     MemberCreate,
     MemberPublic,
     MemberWithToken,
+    MyShift,
     Shift,
     ShiftCreate,
     ShiftPublic,
@@ -118,3 +121,65 @@ def list_shifts(club_id: int, session: SessionDep) -> list[Shift]:
     statement = select(Shift).where(
         Shift.club_id == club_id).order_by(Shift.starts_at)
     return list(session.exec(statement))
+
+
+def get_member_by_token(token: str, session: Session) -> Member:
+    """Find the member behind a personal link, or stop with a 404."""
+    member = session.exec(select(Member).where(
+        Member.access_token == token)).first()
+    if member is None:
+        raise HTTPException(status_code=404, detail="Unknown link")
+    return member
+
+
+def my_shifts(member: Member, session: Session) -> list[MyShift]:
+    """All shifts in the member's club, each marked with their availability."""
+    rows = session.exec(
+        select(Shift, ShiftType)
+        .where(Shift.club_id == member.club_id, Shift.shift_type_id == ShiftType.id)
+        .order_by(Shift.starts_at)
+    ).all()
+    chosen = set(
+        session.exec(select(Availability.shift_id).where(
+            Availability.member_id == member.id)).all()
+    )
+    return [
+        MyShift(
+            id=shift.id,
+            shift_type=shift_type.name,
+            starts_at=shift.starts_at,
+            ends_at=shift.ends_at,
+            available=shift.id in chosen,
+        )
+        for shift, shift_type in rows
+    ]
+
+
+@app.get("/api/me/{token}/shifts", response_model=list[MyShift])
+def read_my_shifts(token: str, session: SessionDep) -> list[MyShift]:
+    member = get_member_by_token(token, session)
+    return my_shifts(member, session)
+
+
+@app.put("/api/me/{token}/availability", response_model=list[MyShift])
+def update_my_availability(
+    token: str, data: AvailabilityUpdate, session: SessionDep
+) -> list[MyShift]:
+    member = get_member_by_token(token, session)
+
+    club_shift_ids = set(session.exec(
+        select(Shift.id).where(Shift.club_id == member.club_id)).all())
+    unknown = set(data.shift_ids) - club_shift_ids
+    if unknown:
+        raise HTTPException(
+            status_code=422, detail=f"Not shifts in your club: {sorted(unknown)}")
+
+    # Replace the member's answers completely: remove the old ones, then add the new ones.
+    for old in session.exec(select(Availability).where(Availability.member_id == member.id)).all():
+        session.delete(old)
+    session.flush()
+    for shift_id in set(data.shift_ids):
+        session.add(Availability(member_id=member.id, shift_id=shift_id))
+    session.commit()
+
+    return my_shifts(member, session)
