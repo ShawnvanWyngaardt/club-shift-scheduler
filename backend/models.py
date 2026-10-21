@@ -4,6 +4,7 @@ from datetime import datetime
 
 from pydantic import model_validator
 from sqlmodel import Field, SQLModel
+from typing import Literal
 
 
 def new_token() -> str:
@@ -154,3 +155,26 @@ class UnfilledShift(SQLModel):
 class Proposal(SQLModel):
     assignments: list[ProposedAssignment]
     unfilled: list[UnfilledShift]
+
+
+# ---------- Outcomes and ledger ----------
+class AssignmentUpdate(SQLModel):
+    status: Literal["done", "no_show"]
+
+
+class Balance(SQLModel):
+    member_id: int
+    name: str
+    balance: int
+
+
+class PointsEntryPublic(SQLModel):
+    member_id: int
+    change: int
+    reason: str
+    created_at: datetime
+
+
+class Ledger(SQLModel):
+    balances: list[Balance]
+    entries: list[PointsEntryPublic]
