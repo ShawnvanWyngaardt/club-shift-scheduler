@@ -3,7 +3,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+import secrets
+from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlmodel import Session, col, func, select
 
 from database import create_tables, get_session
@@ -61,6 +62,26 @@ def get_club_or_404(session: Session, club_id: int) -> Club:
     return club
 
 
+def check_coordinator(club: Club, token: str) -> None:
+    """Stop the request unless the token belongs to this club's coordinator."""
+    if not secrets.compare_digest(club.coordinator_token, token):
+        raise HTTPException(
+            status_code=403, detail="Not the coordinator of this club")
+
+
+def require_coordinator(
+    club_id: int,
+    session: SessionDep,
+    x_coordinator_token: Annotated[str, Header()],
+) -> Club:
+    club = get_club_or_404(session, club_id)
+    check_coordinator(club, x_coordinator_token)
+    return club
+
+
+CoordinatorClub = Annotated[Club, Depends(require_coordinator)]
+
+
 @app.get("/api/health")
 def health() -> Health:
     """Lets us (and the host) check the server is running."""
@@ -82,8 +103,9 @@ def read_club(club_id: int, session: SessionDep) -> Club:
 
 
 @app.post("/api/clubs/{club_id}/members", response_model=MemberWithToken, status_code=201)
-def add_member(club_id: int, data: MemberCreate, session: SessionDep) -> Member:
-    get_club_or_404(session, club_id)
+def add_member(
+    club_id: int, data: MemberCreate, session: SessionDep, club: CoordinatorClub
+) -> Member:
     member = Member.model_validate(data, update={"club_id": club_id})
     session.add(member)
     session.commit()
@@ -98,8 +120,9 @@ def list_members(club_id: int, session: SessionDep) -> list[Member]:
 
 
 @app.post("/api/clubs/{club_id}/shift-types", response_model=ShiftTypePublic, status_code=201)
-def add_shift_type(club_id: int, data: ShiftTypeCreate, session: SessionDep) -> ShiftType:
-    get_club_or_404(session, club_id)
+def add_shift_type(
+    club_id: int, data: ShiftTypeCreate, session: SessionDep, club: CoordinatorClub
+) -> ShiftType:
     shift_type = ShiftType.model_validate(data, update={"club_id": club_id})
     session.add(shift_type)
     session.commit()
@@ -114,8 +137,9 @@ def list_shift_types(club_id: int, session: SessionDep) -> list[ShiftType]:
 
 
 @app.post("/api/clubs/{club_id}/shifts", response_model=ShiftPublic, status_code=201)
-def add_shift(club_id: int, data: ShiftCreate, session: SessionDep) -> Shift:
-    get_club_or_404(session, club_id)
+def add_shift(
+    club_id: int, data: ShiftCreate, session: SessionDep, club: CoordinatorClub
+) -> Shift:
     shift_type = session.get(ShiftType, data.shift_type_id)
     if shift_type is None or shift_type.club_id != club_id:
         raise HTTPException(
@@ -268,17 +292,15 @@ def to_proposal(problem: Problem, result: Result) -> Proposal:
 
 
 @app.post("/api/clubs/{club_id}/schedule/generate")
-def generate_schedule(club_id: int, session: SessionDep) -> Proposal:
+def generate_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -> Proposal:
     """Show what the solver would do. Saves nothing."""
-    get_club_or_404(session, club_id)
     problem = build_problem(club_id, session)
     return to_proposal(problem, solve_greedy(problem))
 
 
 @app.post("/api/clubs/{club_id}/schedule/publish")
-def publish_schedule(club_id: int, session: SessionDep) -> Proposal:
+def publish_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -> Proposal:
     """Run the solver and save the result as assignments."""
-    get_club_or_404(session, club_id)
     problem = build_problem(club_id, session)
     result = solve_greedy(problem)
     for shift_id, member_id in result.assignments:
@@ -301,21 +323,28 @@ def list_assignments(club_id: int, session: SessionDep) -> list[Assignment]:
 # ---------- Outcomes and ledger ----------
 @app.patch("/api/assignments/{assignment_id}", response_model=AssignmentPublic)
 def record_outcome(
-    assignment_id: int, data: AssignmentUpdate, session: SessionDep
+    assignment_id: int,
+    data: AssignmentUpdate,
+    session: SessionDep,
+    x_coordinator_token: Annotated[str, Header()],
 ) -> Assignment:
     """Mark an assignment done or no-show, and write the matching ledger entry."""
     assignment = session.get(Assignment, assignment_id)
     if assignment is None:
         raise HTTPException(status_code=404, detail="Assignment not found")
+
+    shift, shift_type, club = session.exec(
+        select(Shift, ShiftType, Club).where(
+            Shift.id == assignment.shift_id,
+            Shift.shift_type_id == ShiftType.id,
+            Club.id == Shift.club_id,
+        )
+    ).one()
+    check_coordinator(club, x_coordinator_token)
+
     if assignment.status != "assigned":
         raise HTTPException(
             status_code=409, detail=f"Already marked as {assignment.status}")
-
-    shift, shift_type = session.exec(
-        select(Shift, ShiftType).where(
-            Shift.id == assignment.shift_id, Shift.shift_type_id == ShiftType.id
-        )
-    ).one()
 
     change = shift_type.weight if data.status == "done" else -shift_type.weight
     assignment.status = data.status
