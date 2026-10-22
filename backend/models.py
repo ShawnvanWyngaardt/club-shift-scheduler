@@ -1,6 +1,6 @@
 """Database tables and the data shapes the API accepts and returns."""
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import model_validator
 from sqlmodel import Field, SQLModel
@@ -137,7 +137,7 @@ class PointsEntry(SQLModel, table=True):
     member_id: int = Field(foreign_key="member.id", index=True)
     change: int
     reason: str = Field(max_length=200)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------- Schedule proposal ----------
