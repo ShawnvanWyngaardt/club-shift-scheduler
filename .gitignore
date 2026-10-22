@@ -16,3 +16,5 @@ dist/
 # Editors and OS
 .vscode/
 Thumbs.db
+.neon
+.env.local
