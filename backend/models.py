@@ -111,9 +111,19 @@ class MyShift(SQLModel):
     """A shift as one member sees it, with their own answer."""
     id: int
     shift_type: str
+    weight: int
     starts_at: datetime
     ends_at: datetime
     available: bool
+    assigned: bool
+
+
+class MemberProfile(SQLModel):
+    """A member's own view of themselves: name, club and balance."""
+    name: str
+    club_id: int
+    club_name: str
+    balance: int
 
 
 # ---------- Assignments and points ----------
@@ -137,7 +147,8 @@ class PointsEntry(SQLModel, table=True):
     member_id: int = Field(foreign_key="member.id", index=True)
     change: int
     reason: str = Field(max_length=200)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------- Schedule proposal ----------
