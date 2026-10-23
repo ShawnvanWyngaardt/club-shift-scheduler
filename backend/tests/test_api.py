@@ -120,3 +120,22 @@ def test_shift_time_without_offset_is_rejected(client):
         headers=headers,
     )
     assert response.status_code == 422
+
+
+def test_times_come_back_in_utc(client):
+    club_id, headers = make_club(client)
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": "2026-10-24T07:00:00+02:00",
+            "ends_at": "2026-10-24T10:00:00+02:00",
+            "slots": 1,
+        },
+        headers=headers,
+    )
+    shift = client.get(f"/api/clubs/{club_id}/shifts").json()[0]
+    assert shift["starts_at"] == "2026-10-24T05:00:00Z"
