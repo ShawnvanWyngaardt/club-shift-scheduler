@@ -2,7 +2,7 @@
 import secrets
 from datetime import datetime, timezone
 
-from pydantic import model_validator
+from pydantic import AwareDatetime, model_validator
 from sqlmodel import Field, SQLModel
 from typing import Literal
 
@@ -76,6 +76,9 @@ class ShiftBase(SQLModel):
 
 
 class ShiftCreate(ShiftBase):
+    # Times must carry a UTC offset: the database stores them timezone-aware
+    starts_at: AwareDatetime
+    ends_at: AwareDatetime
     shift_type_id: int
 
     @model_validator(mode="after")
@@ -189,3 +192,16 @@ class PointsEntryPublic(SQLModel):
 class Ledger(SQLModel):
     balances: list[Balance]
     entries: list[PointsEntryPublic]
+
+
+class ShiftDetail(ShiftPublic):
+    shift_type: str
+    weight: int
+
+
+class AssignmentDetail(AssignmentPublic):
+    member_name: str
+    shift_type: str
+    starts_at: datetime
+    ends_at: datetime
+    weight: int

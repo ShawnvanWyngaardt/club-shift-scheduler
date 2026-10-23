@@ -6,10 +6,15 @@ from typing import Annotated
 import secrets
 from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlmodel import Session, col, func, select
+from pathlib import Path
+
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from database import create_tables, get_session
 from models import (
     Assignment,
+    AssignmentDetail,
     AssignmentPublic,
     AssignmentUpdate,
     Availability,
@@ -33,6 +38,7 @@ from models import (
     ProposedAssignment,
     Shift,
     ShiftCreate,
+    ShiftDetail,
     ShiftPublic,
     ShiftType,
     ShiftTypeCreate,
@@ -81,6 +87,12 @@ def require_coordinator(
 
 
 CoordinatorClub = Annotated[Club, Depends(require_coordinator)]
+
+
+@app.get("/api/clubs/{club_id}/coordinator", response_model=ClubPublic)
+def check_coordinator_link(club: CoordinatorClub) -> Club:
+    """Lets the coordinator screens confirm a link is valid before showing anything."""
+    return club
 
 
 @app.get("/api/health")
@@ -152,12 +164,26 @@ def add_shift(
     return shift
 
 
-@app.get("/api/clubs/{club_id}/shifts", response_model=list[ShiftPublic])
-def list_shifts(club_id: int, session: SessionDep) -> list[Shift]:
+@app.get("/api/clubs/{club_id}/shifts")
+def list_shifts(club_id: int, session: SessionDep) -> list[ShiftDetail]:
     get_club_or_404(session, club_id)
-    statement = select(Shift).where(
-        Shift.club_id == club_id).order_by(Shift.starts_at)
-    return list(session.exec(statement))
+    rows = session.exec(
+        select(Shift, ShiftType)
+        .where(Shift.club_id == club_id, Shift.shift_type_id == ShiftType.id)
+        .order_by(Shift.starts_at)
+    ).all()
+    return [
+        ShiftDetail(
+            id=shift.id,
+            shift_type_id=shift.shift_type_id,
+            starts_at=shift.starts_at,
+            ends_at=shift.ends_at,
+            slots=shift.slots,
+            shift_type=shift_type.name,
+            weight=shift_type.weight,
+        )
+        for shift, shift_type in rows
+    ]
 
 
 def get_member_by_token(token: str, session: Session) -> Member:
@@ -336,15 +362,33 @@ def publish_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -
     return to_proposal(problem, result)
 
 
-@app.get("/api/clubs/{club_id}/assignments", response_model=list[AssignmentPublic])
-def list_assignments(club_id: int, session: SessionDep) -> list[Assignment]:
+@app.get("/api/clubs/{club_id}/assignments")
+def list_assignments(club_id: int, session: SessionDep) -> list[AssignmentDetail]:
     get_club_or_404(session, club_id)
-    statement = (
-        select(Assignment)
-        .join(Shift, Assignment.shift_id == Shift.id)
-        .where(Shift.club_id == club_id)
-    )
-    return list(session.exec(statement))
+    rows = session.exec(
+        select(Assignment, Member, Shift, ShiftType)
+        .where(
+            Assignment.member_id == Member.id,
+            Assignment.shift_id == Shift.id,
+            Shift.shift_type_id == ShiftType.id,
+            Shift.club_id == club_id,
+        )
+        .order_by(Shift.starts_at)
+    ).all()
+    return [
+        AssignmentDetail(
+            id=assignment.id,
+            shift_id=assignment.shift_id,
+            member_id=assignment.member_id,
+            status=assignment.status,
+            member_name=member.name,
+            shift_type=shift_type.name,
+            starts_at=shift.starts_at,
+            ends_at=shift.ends_at,
+            weight=shift_type.weight,
+        )
+        for assignment, member, shift, shift_type in rows
+    ]
 
 
 # ---------- Outcomes and ledger ----------
@@ -408,3 +452,21 @@ def read_ledger(club_id: int, session: SessionDep) -> Ledger:
         ],
         entries=[PointsEntryPublic.model_validate(e) for e in entries],
     )
+
+
+# ---------- The built Vue app ----------
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST /
+              "assets"), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str) -> FileResponse:
+        """Every non-API URL gets the Vue app; Vue Router decides what to show."""
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        file = (FRONTEND_DIST / full_path).resolve()
+        if full_path and file.is_file() and FRONTEND_DIST in file.parents:
+            return FileResponse(file)
+        return FileResponse(FRONTEND_DIST / "index.html")
