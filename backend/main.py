@@ -23,6 +23,7 @@ from models import (
     Ledger,
     Member,
     MemberCreate,
+    MemberProfile,
     MemberPublic,
     MemberWithToken,
     MyShift,
@@ -169,7 +170,7 @@ def get_member_by_token(token: str, session: Session) -> Member:
 
 
 def my_shifts(member: Member, session: Session) -> list[MyShift]:
-    """All shifts in the member's club, each marked with their availability."""
+    """All shifts in the member's club, with their availability and assignments."""
     rows = session.exec(
         select(Shift, ShiftType)
         .where(Shift.club_id == member.club_id, Shift.shift_type_id == ShiftType.id)
@@ -179,13 +180,19 @@ def my_shifts(member: Member, session: Session) -> list[MyShift]:
         session.exec(select(Availability.shift_id).where(
             Availability.member_id == member.id)).all()
     )
+    assigned = set(
+        session.exec(select(Assignment.shift_id).where(
+            Assignment.member_id == member.id)).all()
+    )
     return [
         MyShift(
             id=shift.id,
             shift_type=shift_type.name,
+            weight=shift_type.weight,
             starts_at=shift.starts_at,
             ends_at=shift.ends_at,
             available=shift.id in chosen,
+            assigned=shift.id in assigned,
         )
         for shift, shift_type in rows
     ]
@@ -195,6 +202,15 @@ def my_shifts(member: Member, session: Session) -> list[MyShift]:
 def read_my_shifts(token: str, session: SessionDep) -> list[MyShift]:
     member = get_member_by_token(token, session)
     return my_shifts(member, session)
+
+
+@app.get("/api/me/{token}")
+def read_me(token: str, session: SessionDep) -> MemberProfile:
+    """Who the link belongs to, and their balance this season."""
+    member = get_member_by_token(token, session)
+    club = session.get(Club, member.club_id)
+    balance = points_by_member(member.club_id, session).get(member.id, 0)
+    return MemberProfile(name=member.name, club_id=club.id, club_name=club.name, balance=balance)
 
 
 @app.put("/api/me/{token}/availability", response_model=list[MyShift])
@@ -209,6 +225,17 @@ def update_my_availability(
     if unknown:
         raise HTTPException(
             status_code=422, detail=f"Not shifts in your club: {sorted(unknown)}")
+
+    assigned = set(
+        session.exec(select(Assignment.shift_id).where(
+            Assignment.member_id == member.id)).all()
+    )
+    dropped = assigned - set(data.shift_ids)
+    if dropped:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Already assigned to you, ask your coordinator to swap: {sorted(dropped)}",
+        )
 
     # Replace the member's answers completely: remove the old ones, then add the new ones.
     for old in session.exec(select(Availability).where(Availability.member_id == member.id)).all():
