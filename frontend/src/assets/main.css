@@ -7,6 +7,8 @@
   --color-accent: #0b6e69;
   --color-ok: #067647;
   --color-error: #b42318;
+  --color-warning: #b54708;
+  --color-warning-surface: #fffaeb;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
@@ -62,4 +64,22 @@ button:disabled {
 
 .muted {
   color: var(--color-muted);
+}
+
+.page-wide {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.button-secondary {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+
+.tag {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  white-space: nowrap;
 }
