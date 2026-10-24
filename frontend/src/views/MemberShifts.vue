@@ -180,11 +180,6 @@ legend {
   font-weight: 600;
   white-space: nowrap;
 }
-.tag {
-  font-size: 0.875rem;
-  color: var(--color-muted);
-  white-space: nowrap;
-}
 .actions {
   position: sticky;
   bottom: 0;
