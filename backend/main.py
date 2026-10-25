@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-app = FastAPI(title="Club Shift Scheduler", lifespan=lifespan)
+app = FastAPI(title="Club Shift Scheduler", version="0.1.0", lifespan=lifespan)
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
