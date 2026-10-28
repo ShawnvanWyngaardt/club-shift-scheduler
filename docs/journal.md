@@ -14,7 +14,7 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 
 ## Mon 19 Oct 2026: Python basics, first API, first deploy
 
-- **Built:** FastAPI skeleton with a health endpoint, deployed live on Render. In the afternoon spent more time on the rest opf the endpoints for members, clubs and shifts. Testing still to be done on the latter. Python exercises (dataclasses, validation, comprehensions). Then the database models and endpoints for clubs, members, shift types and shifts.
+- **Built:** FastAPI skeleton with a health endpoint, deployed live on Render. In the afternoon spent more time on the rest of the endpoints for members, clubs and shifts. Testing still to be done on the latter. Python exercises (dataclasses, validation, comprehensions). Then the database models and endpoints for clubs, members, shift types and shifts.
 - **Decision:** Root directory set to `backend` so Render finds `uv.lock` and uses uv. Also decided to lean more on claude for the backend, while I'm still learning.
 - **Decision:** three models per thing (create, table, public), so clients can never set ids or see other people's tokens.
 - **Decision:** build with AI assistance openly, marking code as boilerplate or must-understand, and document it in the README.
@@ -64,15 +64,50 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 
 - **Built:** no new features. Fixed deployment and ran the first real test.
 - **Went wrong:** a frontend-only merge never deployed, because Render only watches the service's root directory (`backend`). Fixed with build filters for both folders.
-- **Tested:** my wife used the member page on her phone while I coordinated on the laptop; I also ran it myself on an old phone and on desktop.
-- ## **User Test: What she found:** TBD
-  -
-  -
-- ## **User Test: What I found:** TBD
-  -
-  -
-- **Is there anything to fixing for v0.1.0, and why:** TBD
-- **What moves to v0.2:** TBD
+- **Tested:** my first tester used the member page on her phone while I coordinated on the laptop; I also ran it myself on an old phone and on desktop.
+
+### User test: what she understood straight away
+
+- The purpose, with no explanation from me: as a member she has to take part in shifts and tell the coordinator her availability, and the app gives the coordinator "a neat (and live) oversight of which shifts has been filled by which member, and which shifts are yet to be filled."
+- That the least popular shift earns the most points.
+
+### User test: what she saw and did
+
+- **Pre-ticked shifts read as the app's choice.** The field setup shifts were already ticked, and she read them as "automatically selected", something she would have to untick if she didn't want it. In fact they were the seed script's sample availability for her member, but the page never says that ticks are her own saved answers.
+- **An assigned shift read as an order.** The youth referee shift was already assigned to her, and she took it as compulsory.
+- **Assigned shifts show no points.** She could see the points for the shifts she could still choose, but not for the one she'd been given.
+- **Points didn't change her choice.** The 07:00 bar shift earns the most, and it would still be "the last one that I would choose". She kept it unticked and kept the field setup shifts.
+
+### User test: what she thought happened
+
+- She assumed the coordinator had compared members by hand, seen that nobody chose the youth referee shift, and picked her as someone who had done the least and never volunteered for it. In reality the solver assigned it automatically, from her availability and her low points balance. **The app never explains why a shift was given to her**, so she filled the gap with a story about a person deciding.
+
+### User test: after the outcome was recorded
+
+- "I don't see anything different this time around." I had marked her shift done, which added points, but her page didn't make the change visible enough to notice.
+
+### User test: her verdict
+
+- She would change nothing.
+- She would rather use the app than a WhatsApp group. She already keeps up with several group chats and apps for school and family activities, and an app for shifts means no debate about who does what, and nothing for "that one member who always complains" to complain about.
+
+### User test: what I found
+
+- TBD
+
+### Takeaways
+
+- "Nothing I would change" and the observations above say different things. She found no bugs, but four places where the app doesn't explain itself: pre-ticked answers, assignments, points on assigned shifts, and outcomes.
+- Points alone didn't change her behaviour. One user isn't proof, but it questions the assumption that the reward motivates; fairness may come from the priority rule rather than from people chasing points.
+- The problem is real to her: the strongest validation in the test is that she'd prefer this to the group chat.
+
+- **Anything to fix for v0.1.0:** no. Everything worked as built; the findings are about understanding, not bugs, so they move to v0.2.0.
+- **What moves to v0.2.0:**
+  - Explain each assignment on the member page, for example "You said you could, and you have the fewest points."
+  - Show points on assigned shifts too.
+  - Show outcomes on the member page: done or no-show, and the points it added, with the new balance.
+  - Make clear that ticks are the member's own saved answers.
+  - Revisit whether points motivate, or whether the priority rule is the real fairness mechanism; ask the next testers.
 
 ---
 
