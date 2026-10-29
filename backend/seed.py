@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from sqlmodel import Session
 
-from database import create_tables, engine
+from database import engine
 from models import Availability, Club, Member, PointsEntry, Shift, ShiftType
 
 MEMBER_NAMES = ["Anouk", "Bram", "Daan", "Emma",
@@ -43,7 +43,6 @@ def next_saturday() -> date:
 
 def seed(weeks: int = 2) -> None:
     rng = random.Random(42)  # same "random" data every run
-    create_tables()
 
     with Session(engine) as session:
         club = Club(name="VV Demo")

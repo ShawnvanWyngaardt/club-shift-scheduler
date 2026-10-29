@@ -11,6 +11,7 @@ dist/
 
 # Secrets and local data
 .env
+.env.*
 *.db
 
 # Editors and OS

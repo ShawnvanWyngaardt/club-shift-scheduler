@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from database import create_tables, get_session
+from database import get_session
 from models import (
     Assignment,
     AssignmentDetail,
@@ -51,8 +51,6 @@ from solver import MemberIn, Problem, Result, ShiftIn, solve_greedy
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Runs once at startup: make sure the tables exist."""
-    create_tables()
     yield
 
 
