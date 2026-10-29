@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from models import Health
-from routers import clubs, members, outcomes, schedule
+from routers import clubs, demo, members, outcomes, schedule
 
 app = FastAPI(title="Club Shift Scheduler", version="0.1.0")
 
@@ -14,6 +14,7 @@ app.include_router(clubs.router)
 app.include_router(members.router)
 app.include_router(schedule.router)
 app.include_router(outcomes.router)
+app.include_router(demo.router)
 
 
 @app.get("/api/health", tags=["health"])

@@ -2,6 +2,7 @@
 import secrets
 from datetime import datetime, timezone
 
+import sqlalchemy as sa
 from pydantic import AwareDatetime, model_validator
 from sqlmodel import Field, SQLModel
 from typing import Literal
@@ -24,6 +25,14 @@ class ClubCreate(SQLModel):
 class Club(ClubCreate, table=True):
     id: int | None = Field(default=None, primary_key=True)
     coordinator_token: str = Field(default_factory=new_token, index=True)
+    # Demo clubs are sandboxes for visitors, removed after a day; seeded and real clubs are not.
+    is_demo: bool = Field(
+        default=False, index=True, sa_column_kwargs={"server_default": sa.false()}
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"server_default": sa.func.current_timestamp()},
+    )
 
 
 class ClubPublic(ClubCreate):
@@ -205,3 +214,17 @@ class AssignmentDetail(AssignmentPublic):
     starts_at: datetime
     ends_at: datetime
     weight: int
+
+
+# ---------- Demo sandbox ----------
+class DemoMemberLink(SQLModel):
+    name: str
+    points: int
+    token: str
+
+
+class DemoClub(SQLModel):
+    club_id: int
+    club_name: str
+    coordinator_token: str
+    members: list[DemoMemberLink]
