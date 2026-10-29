@@ -91,12 +91,12 @@ async function startDemo() {
       <p class="links">
         <a
           href="https://github.com/ShawnvanWyngaardt/club-shift-scheduler/tree/main/docs"
-          target="blank"
+          target="_blank"
         >
           Read how it was built
         </a>
         <span aria-hidden="true">·</span>
-        <a href="/docs" target="blank">API documentation</a>
+        <a href="/docs" target="_blank">API documentation</a>
       </p>
     </section>
   </main>
