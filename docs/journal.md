@@ -115,3 +115,15 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 
 - **What I'd do differently:** TBD
 - **What surprised me:** TBD
+
+---
+
+## Wed 28 Oct: v0.2.0 begins, and production was closer than I thought
+
+- **Built:** started v0.2.0 with database migrations. Installed Alembic, wired it to the app's own models and database connection, and generated the first migration from an empty local database. Removed create-tables-on-startup: the schema now only changes through migrations. Also replaced the default "Vite App" page title and favicon with the app's own.
+- **Decision:** migrations before any new feature, because the first v0.2.0 feature adds columns to an existing table, and create-on-startup only ever creates missing tables. Alembic replaces it (decision 11).
+- **Went wrong:** the first generated migration wanted to drop a table called `playing_with_neon` and created none of mine. That made no sense for a local database, so I stopped before applying it. The cause: `database.py` silently loaded a `.env.local` file that the Neon CLI had written to the repo root, so every local command (Alembic, the seed script, the dev server) had been talking to the production database by default. Checking the terminal showed nothing, because the connection string only existed inside Python.
+- **Went wrong, nearly:** `.gitignore` only ignored `.env`, which doesn't match `.env.local`. The file had never been committed, but the next `git add .` would have put the database password in a public repo.
+- **Fixed:** removed the automatic loading, so local development uses SQLite unless I deliberately point a terminal at Neon; ignored all `.env.*` files; regenerated the migration against an empty local database.
+- **Learned:** a convenience added by a tool can quietly change where your commands run, so check what a tool writes into your project. Read a generated migration before applying it: the strange table name was the only clue anything was wrong. And an ignore pattern only protects you from the exact names it matches.
+- **To-Do** The CI check, the Neon stamp and the Render start command are for the carried over to the next day of development.
