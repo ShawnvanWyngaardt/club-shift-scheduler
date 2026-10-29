@@ -1,3 +1,31 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ApiError, demoApi } from '@/api'
+import { rememberDemo } from '@/demo'
+
+const router = useRouter()
+const starting = ref(false)
+const error = ref('')
+
+async function startDemo() {
+  starting.value = true
+  error.value = ''
+  try {
+    const demo = await demoApi.start()
+    rememberDemo(demo)
+    await router.push({
+      name: 'schedule',
+      params: { clubId: String(demo.club_id), token: demo.coordinator_token },
+    })
+  } catch (e) {
+    error.value =
+      e instanceof ApiError ? e.message : 'Could not reach the server. Please try again.'
+    starting.value = false
+  }
+}
+</script>
+
 <template>
   <main class="landing">
     <section class="hero">
@@ -8,15 +36,23 @@
         stop doing everything.
       </p>
       <div class="cta">
-        <p class="muted">A live demo you can try yourself is on its way.</p>
+        <button type="button" :disabled="starting" @click="startDemo">
+          {{ starting ? 'Setting up your demo…' : 'Try the demo' }}
+        </button>
         <a
           class="link-button button-secondary"
           href="https://github.com/ShawnvanWyngaardt/club-shift-scheduler"
-          target="blank"
         >
           See the code on GitHub
         </a>
       </div>
+      <p v-if="starting" class="muted note">
+        The first visit can take up to a minute while the server wakes up.
+      </p>
+      <p v-if="error" class="error note" role="alert">{{ error }}</p>
+      <p class="muted note">
+        Your demo is a private club with sample members, deleted after 24 hours. No sign-up.
+      </p>
     </section>
 
     <section aria-labelledby="how-it-works">
@@ -159,5 +195,11 @@ h2 {
 .links a {
   color: var(--color-accent);
   font-weight: 600;
+}
+.note {
+  margin: var(--space-3) 0 0;
+}
+.error {
+  color: var(--color-error);
 }
 </style>

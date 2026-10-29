@@ -113,3 +113,20 @@ export const coordinatorApi = {
       headers: asCoordinator(token),
     }),
 }
+
+export interface DemoMemberLink {
+  name: string
+  points: number
+  token: string
+}
+
+export interface DemoClub {
+  club_id: number
+  club_name: string
+  coordinator_token: string
+  members: DemoMemberLink[]
+}
+
+export const demoApi = {
+  start: () => request<DemoClub>('/demo', { method: 'POST' }),
+}

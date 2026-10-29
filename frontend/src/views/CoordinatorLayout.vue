@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ApiError, coordinatorApi, type ClubPublic } from '@/api'
+import DemoPanel from '@/components/DemoPanel.vue'
+import { recallDemo } from '@/demo'
 
 const props = defineProps<{ clubId: string; token: string }>()
 
 const club = ref<ClubPublic | null>(null)
 const state = ref<'loading' | 'ready' | 'invalid' | 'error'>('loading')
+const demo = recallDemo(Number(props.clubId))
 
 async function load() {
   state.value = 'loading'
@@ -47,6 +50,9 @@ onMounted(load)
           <RouterLink :to="{ name: 'outcomes', params: { clubId, token } }">Outcomes</RouterLink>
         </nav>
       </div>
+      <div v-if="demo" class="page-wide demo-wrap">
+        <DemoPanel :demo="demo" />
+      </div>
     </header>
     <RouterView />
   </template>
@@ -87,5 +93,8 @@ onMounted(load)
   color: var(--color-ink);
   font-weight: 600;
   border-bottom-color: var(--color-accent);
+}
+.demo-wrap {
+  padding-bottom: 0;
 }
 </style>
