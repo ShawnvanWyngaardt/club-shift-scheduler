@@ -20,4 +20,4 @@ export function recallDemo(clubId: number): DemoClub | null {
   }
 }
 
-export const memberUrl = (token: string) => `${window.location.origin}/m/${token}`
+//export const memberUrl = (token: string) => `${window.location.origin}/m/${token}`

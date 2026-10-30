@@ -112,6 +112,16 @@ export const coordinatorApi = {
       body: JSON.stringify({ status }),
       headers: asCoordinator(token),
     }),
+  createClub: (name: string) =>
+    request<ClubWithToken>('/clubs', { method: 'POST', body: JSON.stringify({ name }) }),
+  memberLinks: (clubId: number, token: string) =>
+    request<MemberLink[]>(`${club(clubId)}/members/links`, { headers: asCoordinator(token) }),
+  addMember: (clubId: number, token: string, name: string) =>
+    request<MemberLink>(`${club(clubId)}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+      headers: asCoordinator(token),
+    }),
 }
 
 export interface DemoMemberLink {
@@ -129,4 +139,14 @@ export interface DemoClub {
 
 export const demoApi = {
   start: () => request<DemoClub>('/demo', { method: 'POST' }),
+}
+
+export interface ClubWithToken extends ClubPublic {
+  coordinator_token: string
+}
+
+export interface MemberLink {
+  id: number
+  name: string
+  access_token: string
 }
