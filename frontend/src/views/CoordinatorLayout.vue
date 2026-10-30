@@ -48,6 +48,7 @@ onMounted(load)
         <nav aria-label="Coordinator sections" class="tabs">
           <RouterLink :to="{ name: 'schedule', params: { clubId, token } }">Schedule</RouterLink>
           <RouterLink :to="{ name: 'outcomes', params: { clubId, token } }">Outcomes</RouterLink>
+          <RouterLink :to="{ name: 'setup', params: { clubId, token } }">Setup</RouterLink>
         </nav>
       </div>
       <div v-if="demo" class="page-wide demo-wrap">

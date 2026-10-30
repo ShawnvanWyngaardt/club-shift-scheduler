@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { DemoClub } from '@/api'
-import { memberUrl } from '@/demo'
+import { memberUrl } from '@/links'
 
 const props = defineProps<{ demo: DemoClub }>()
 

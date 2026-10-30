@@ -53,6 +53,9 @@ async function startDemo() {
       <p class="muted note">
         Your demo is a private club with sample members, deleted after 24 hours. No sign-up.
       </p>
+      <p class="muted note">
+        Running a real club? <RouterLink to="/start">Start your own</RouterLink>.
+      </p>
     </section>
 
     <section aria-labelledby="how-it-works">
