@@ -139,3 +139,24 @@ def test_times_come_back_in_utc(client):
     )
     shift = client.get(f"/api/clubs/{club_id}/shifts").json()[0]
     assert shift["starts_at"] == "2026-10-24T05:00:00Z"
+
+
+def test_only_the_coordinator_can_list_member_links(client):
+    club_id, headers = make_club(client)
+    client.post(f"/api/clubs/{club_id}/members",
+                json={"name": "Anna"}, headers=headers)
+    url = f"/api/clubs/{club_id}/members/links"
+
+    assert client.get(url).status_code == 422
+    assert client.get(
+        url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
+    links = client.get(url, headers=headers).json()
+    assert links[0]["name"] == "Anna" and links[0]["access_token"]
+
+
+def test_public_member_list_never_shows_tokens(client):
+    club_id, headers = make_club(client)
+    client.post(f"/api/clubs/{club_id}/members",
+                json={"name": "Anna"}, headers=headers)
+    assert "access_token" not in client.get(
+        f"/api/clubs/{club_id}/members").json()[0]
