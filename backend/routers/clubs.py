@@ -54,6 +54,14 @@ def list_members(club_id: int, session: SessionDep) -> list[Member]:
     return list(session.exec(select(Member).where(Member.club_id == club_id)))
 
 
+@router.get("/{club_id}/members/links", response_model=list[MemberWithToken])
+def list_member_links(club_id: int, session: SessionDep, club: CoordinatorClub) -> list[Member]:
+    """Every member with their personal link token. Coordinator only: tokens work like passwords."""
+    statement = select(Member).where(
+        Member.club_id == club_id).order_by(Member.name)
+    return list(session.exec(statement))
+
+
 @router.post("/{club_id}/shift-types", response_model=ShiftTypePublic, status_code=201)
 def add_shift_type(
     club_id: int, data: ShiftTypeCreate, session: SessionDep, club: CoordinatorClub
@@ -73,7 +81,8 @@ def add_shift(
 ) -> Shift:
     shift_type = session.get(ShiftType, data.shift_type_id)
     if shift_type is None or shift_type.club_id != club_id:
-        raise HTTPException(status_code=404, detail="Shift type not found in this club")
+        raise HTTPException(
+            status_code=404, detail="Shift type not found in this club")
     return save(session, Shift.model_validate(data, update={"club_id": club_id}))
 
 
