@@ -127,3 +127,23 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Fixed:** removed the automatic loading, so local development uses SQLite unless I deliberately point a terminal at Neon; ignored all `.env.*` files; regenerated the migration against an empty local database.
 - **Learned:** a convenience added by a tool can quietly change where your commands run, so check what a tool writes into your project. Read a generated migration before applying it: the strange table name was the only clue anything was wrong. And an ignore pattern only protects you from the exact names it matches.
 - **To-Do** The CI check, the Neon stamp and the Render start command are for the carried over to the next day of development.
+
+## Thu 29 Oct: from migrations to a demo anyone can try
+
+- **Built:** finished the move to Alembic: CI now checks that models and migrations agree, Neon was stamped at the current version, and Render runs migrations on every deploy. Then four sessions in one day: a landing page at the root URL, `main.py` split into routers, a demo sandbox backend, and the "Try the demo" button with a step-by-step guide on the coordinator screen.
+- **Decision:** built the landing page before the router split, swapping two planned sessions. It needed no backend work and fixed the first thing every visitor saw: "Page not found".
+- **Decision:** every visitor gets their own sandbox club, deleted after 24 hours, with a member called "You" who starts with nothing ticked. A shared demo would break the moment one visitor published a schedule. Starting "You" with no answers also responds to the first user test, where pre-ticked shifts read as the app's choice.
+- **Decision:** logged decisions 11 (Alembic migrations, replacing tables-on-startup) and 12 (times stored timezone-aware, shown in Amsterdam time), and put snapshots of all three plans and their diagrams into `docs/`.
+- **Went wrong:** saved the new Render start command before merging the code that installed Alembic, so the deploy failed until the merge. The same lesson as on 22 October: ship the code before the setting that depends on it.
+- **Went wrong, caught in time:** the generated migration set a boolean default as the number `0`. SQLite accepts that, Postgres doesn't, so it would have passed every local test and failed on deploy. Changed it to `sa.false()`, which each database writes its own way.
+- **Went wrong:** a cleanup test failed because SQLite reused a deleted club's id for the next club, so the test found the new club and thought the old one survived. Postgres never reuses ids. Fixed the test to look the club up by its token, which is also why stale links can never open someone else's club.
+- **Learned:** how Python packages and imports work across files, FastAPI routers, `server_default` for adding columns to tables that already have rows, and that SQLite and Postgres differ in ways local tests can't show.
+
+## Fri 30 Oct: real clubs without the seed script
+
+- **Built:** "Start a club" from the landing page, with a one-time screen to save the coordinator link, and a Setup tab where coordinators add members and send each one their link with Copy or Share on WhatsApp. Behind it, a coordinator-only endpoint that lists members with their links.
+- **Decision:** member tokens only appear behind the coordinator token, never in the public members list. A test checks both sides of that boundary.
+- **Decision:** no accounts means no way to recover a lost coordinator link, so the app says so plainly at the one moment it matters, with a copy button and an "I've saved it" step.
+- **Decision:** split the session into a backend and a frontend pull request, so a busy day could stop after either one without leaving work half-done.
+- **Tidied:** one file for all link builders, and deleted old merged branches locally and on GitHub.
+- **Noticed:** VS Code's Problems tab had a mix of real issues and false alarms, and nothing enforced code style. The plan had listed Ruff since day one, but it was never set up; it's the next thing to add.
