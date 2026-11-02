@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, formatTimeRange } from '@/time'
+import { amsterdamToIso, formatDay, formatTimeRange } from '@/time'
 
 describe('time formatting', () => {
+  it('turns club time into the right UTC moment on both sides of the clock change', () => {
+    expect(amsterdamToIso('2026-10-24', '07:00')).toBe('2026-10-24T05:00:00.000Z')
+    expect(amsterdamToIso('2026-10-31', '07:00')).toBe('2026-10-31T06:00:00.000Z')
+  })
+
   it('shows UTC times from the API in Amsterdam time', () => {
     expect(formatTimeRange('2026-10-24T05:00:00Z', '2026-10-24T09:00:00Z')).toBe('07:00 – 11:00')
   })

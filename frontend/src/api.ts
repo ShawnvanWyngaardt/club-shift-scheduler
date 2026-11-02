@@ -31,9 +31,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    const detail = typeof body.detail === 'string' ? body.detail : response.statusText
-    throw new ApiError(response.status, detail)
+    const detail = Array.isArray(body.detail) ? body.detail[0]?.msg : body.detail
+    throw new ApiError(response.status, typeof detail === 'string' ? detail : response.statusText)
   }
+  if (response.status === 204) return undefined as T
   return response.json() as Promise<T>
 }
 
@@ -122,6 +123,24 @@ export const coordinatorApi = {
       body: JSON.stringify({ name }),
       headers: asCoordinator(token),
     }),
+  shiftTypes: (clubId: number) => request<ShiftTypeInfo[]>(`${club(clubId)}/shift-types`),
+  addShiftType: (clubId: number, token: string, name: string, weight: number) =>
+    request<ShiftTypeInfo>(`${club(clubId)}/shift-types`, {
+      method: 'POST',
+      body: JSON.stringify({ name, weight }),
+      headers: asCoordinator(token),
+    }),
+  addWeeklyShifts: (clubId: number, token: string, input: WeeklyShiftsInput) =>
+    request<unknown[]>(`${club(clubId)}/shifts/weekly`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+      headers: asCoordinator(token),
+    }),
+  remove: (clubId: number, token: string, item: SetupItem, id: number) =>
+    request<void>(`${club(clubId)}/${item}/${id}`, {
+      method: 'DELETE',
+      headers: asCoordinator(token),
+    }),
 }
 
 export interface DemoMemberLink {
@@ -150,3 +169,19 @@ export interface MemberLink {
   name: string
   access_token: string
 }
+
+export interface ShiftTypeInfo {
+  id: number
+  name: string
+  weight: number
+}
+
+export interface WeeklyShiftsInput {
+  shift_type_id: number
+  starts_at: string
+  ends_at: string
+  slots: number
+  weeks: number
+}
+
+export type SetupItem = 'members' | 'shifts' | 'shift-types'
