@@ -1,4 +1,5 @@
 """API entry point for the Club Shift Scheduler: builds the app from its routers."""
+
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException

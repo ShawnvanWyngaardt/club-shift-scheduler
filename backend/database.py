@@ -1,4 +1,5 @@
 """Database connection and session handling."""
+
 import os
 from collections.abc import Iterator
 

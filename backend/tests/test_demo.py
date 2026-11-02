@@ -1,5 +1,6 @@
 """Demo sandboxes: one per visitor, cleaned up after a day, and capped in number."""
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -38,8 +39,9 @@ def test_demo_gives_a_working_sandbox(client):
     demo = response.json()
 
     headers = {"X-Coordinator-Token": demo["coordinator_token"]}
-    assert client.get(
-        f"/api/clubs/{demo['club_id']}/coordinator", headers=headers).status_code == 200
+    assert (
+        client.get(f"/api/clubs/{demo['club_id']}/coordinator", headers=headers).status_code == 200
+    )
 
     visitor = demo["members"][0]
     assert visitor["name"] == "You" and visitor["points"] == 0
@@ -58,7 +60,7 @@ def test_expired_demos_are_removed(client, engine):
     old = client.post("/api/demo").json()
     with Session(engine) as session:
         club = session.get(Club, old["club_id"])
-        club.created_at = datetime.now(timezone.utc) - timedelta(hours=25)
+        club.created_at = datetime.now(UTC) - timedelta(hours=25)
         session.add(club)
         session.commit()
 
@@ -68,11 +70,9 @@ def test_expired_demos_are_removed(client, engine):
     old_member_token = old["members"][0]["token"]
     with Session(engine) as session:
         club = session.exec(
-            select(Club).where(Club.coordinator_token ==
-                               old["coordinator_token"])
+            select(Club).where(Club.coordinator_token == old["coordinator_token"])
         ).first()
-        member = session.exec(select(Member).where(
-            Member.access_token == old_member_token)).first()
+        member = session.exec(select(Member).where(Member.access_token == old_member_token)).first()
         assert club is None
         assert member is None
 
@@ -80,7 +80,7 @@ def test_expired_demos_are_removed(client, engine):
 def test_seeded_clubs_are_never_removed(engine):
     with Session(engine) as session:
         club, _ = sandbox.create_demo_club(session, is_demo=False)
-        club.created_at = datetime.now(timezone.utc) - timedelta(days=30)
+        club.created_at = datetime.now(UTC) - timedelta(days=30)
         session.add(club)
         session.commit()
         club_id = club.id

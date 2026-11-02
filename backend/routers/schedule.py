@@ -1,4 +1,5 @@
 """Generating, publishing and listing a club's schedule."""
+
 from fastapi import APIRouter
 from sqlmodel import select
 

@@ -1,11 +1,12 @@
 """Database tables and the data shapes the API accepts and returns."""
+
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Literal
 
 import sqlalchemy as sa
 from pydantic import AwareDatetime, model_validator
 from sqlmodel import Field, SQLModel
-from typing import Literal
 
 
 def new_token() -> str:
@@ -30,7 +31,7 @@ class Club(ClubCreate, table=True):
         default=False, index=True, sa_column_kwargs={"server_default": sa.false()}
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         sa_column_kwargs={"server_default": sa.func.current_timestamp()},
     )
 
@@ -111,6 +112,7 @@ class ShiftPublic(ShiftBase):
 # ---------- Availability ----------
 class Availability(SQLModel, table=True):
     """One row means: this member can do this shift. No row means unavailable."""
+
     member_id: int = Field(foreign_key="member.id", primary_key=True)
     shift_id: int = Field(foreign_key="shift.id", primary_key=True)
 
@@ -121,6 +123,7 @@ class AvailabilityUpdate(SQLModel):
 
 class MyShift(SQLModel):
     """A shift as one member sees it, with their own answer."""
+
     id: int
     shift_type: str
     weight: int
@@ -132,6 +135,7 @@ class MyShift(SQLModel):
 
 class MemberProfile(SQLModel):
     """A member's own view of themselves: name, club and balance."""
+
     name: str
     club_id: int
     club_name: str
@@ -155,12 +159,12 @@ class AssignmentPublic(SQLModel):
 
 class PointsEntry(SQLModel, table=True):
     """Append-only ledger: a member's balance is the sum of their entries."""
+
     id: int | None = Field(default=None, primary_key=True)
     member_id: int = Field(foreign_key="member.id", index=True)
     change: int
     reason: str = Field(max_length=200)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 # ---------- Schedule proposal ----------

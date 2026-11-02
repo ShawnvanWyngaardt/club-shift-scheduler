@@ -1,4 +1,5 @@
 """Recording what happened on the day, and the points ledger it feeds."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, Header, HTTPException
