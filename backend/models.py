@@ -98,6 +98,12 @@ class ShiftCreate(ShiftBase):
         return self
 
 
+class WeeklyShiftsCreate(ShiftCreate):
+    """The same shift every week, starting from the given date."""
+
+    weeks: int = Field(ge=1, le=26)
+
+
 class Shift(ShiftBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     club_id: int = Field(foreign_key="club.id", index=True)

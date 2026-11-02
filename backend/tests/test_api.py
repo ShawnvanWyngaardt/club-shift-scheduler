@@ -1,5 +1,8 @@
 """API tests: the whole fairness loop through HTTP, on a throwaway in-memory database."""
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
@@ -159,3 +162,92 @@ def test_public_member_list_never_shows_tokens(client):
     club_id, headers = make_club(client)
     client.post(f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers)
     assert "access_token" not in client.get(f"/api/clubs/{club_id}/members").json()[0]
+
+
+def test_weekly_shifts_keep_local_time_across_the_clock_change(client):
+    club_id, headers = make_club(client)
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    response = client.post(
+        f"/api/clubs/{club_id}/shifts/weekly",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": "2026-10-17T07:00:00+02:00",
+            "ends_at": "2026-10-17T11:00:00+02:00",
+            "slots": 2,
+            "weeks": 3,
+        },
+        headers=headers,
+    )
+    assert response.status_code == 201
+    amsterdam = ZoneInfo("Europe/Amsterdam")
+    local_starts = [
+        datetime.fromisoformat(s["starts_at"]).astimezone(amsterdam).strftime("%Y-%m-%d %H:%M")
+        for s in response.json()
+    ]
+    assert local_starts == ["2026-10-17 07:00", "2026-10-24 07:00", "2026-10-31 07:00"]
+
+
+def test_member_with_history_stays(client):
+    club_id, headers, _ = published_shift(client)
+    anna = client.get(f"/api/clubs/{club_id}/members/links", headers=headers).json()[0]
+    assert (
+        client.delete(f"/api/clubs/{club_id}/members/{anna['id']}", headers=headers).status_code
+        == 409
+    )
+
+    bram = client.post(
+        f"/api/clubs/{club_id}/members", json={"name": "Bram"}, headers=headers
+    ).json()
+    assert (
+        client.delete(f"/api/clubs/{club_id}/members/{bram['id']}", headers=headers).status_code
+        == 204
+    )
+    assert [m["name"] for m in client.get(f"/api/clubs/{club_id}/members").json()] == ["Anna"]
+
+
+def test_only_unscheduled_shifts_can_be_deleted(client):
+    club_id, headers, _ = published_shift(client)
+    scheduled = client.get(f"/api/clubs/{club_id}/shifts").json()[0]
+    url = f"/api/clubs/{club_id}/shifts/{scheduled['id']}"
+    assert client.delete(url).status_code == 422
+    assert client.delete(url, headers=headers).status_code == 409
+
+    shift_type = client.get(f"/api/clubs/{club_id}/shift-types").json()[0]
+    extra = client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": "2026-10-31T07:00:00+01:00",
+            "ends_at": "2026-10-31T10:00:00+01:00",
+            "slots": 1,
+        },
+        headers=headers,
+    ).json()
+    assert (
+        client.delete(f"/api/clubs/{club_id}/shifts/{extra['id']}", headers=headers).status_code
+        == 204
+    )
+    assert len(client.get(f"/api/clubs/{club_id}/shifts").json()) == 1
+
+
+def test_shift_type_in_use_cannot_be_deleted(client):
+    club_id, headers, _ = published_shift(client)
+    in_use = client.get(f"/api/clubs/{club_id}/shift-types").json()[0]
+    assert (
+        client.delete(
+            f"/api/clubs/{club_id}/shift-types/{in_use['id']}", headers=headers
+        ).status_code
+        == 409
+    )
+
+    unused = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Driving", "weight": 2}, headers=headers
+    ).json()
+    assert (
+        client.delete(
+            f"/api/clubs/{club_id}/shift-types/{unused['id']}", headers=headers
+        ).status_code
+        == 204
+    )
