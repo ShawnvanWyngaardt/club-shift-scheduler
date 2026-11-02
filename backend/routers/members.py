@@ -1,4 +1,5 @@
 """Everything a member does through their personal link."""
+
 from fastapi import APIRouter, HTTPException
 from sqlmodel import Session, select
 

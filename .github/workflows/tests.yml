@@ -14,6 +14,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
       - run: uv run pytest -v
       - run: uv run alembic upgrade head
       - run: uv run alembic check
@@ -31,5 +33,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npx oxlint .
+      - run: npx eslint .
       - run: npm run test:unit -- --run
       - run: npm run build

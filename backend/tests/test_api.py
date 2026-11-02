@@ -1,4 +1,5 @@
 """API tests: the whole fairness loop through HTTP, on a throwaway in-memory database."""
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
@@ -49,8 +50,7 @@ def published_shift(client):
         headers=headers,
     ).json()
     token = member["access_token"]
-    client.put(f"/api/me/{token}/availability",
-               json={"shift_ids": [shift["id"]]})
+    client.put(f"/api/me/{token}/availability", json={"shift_ids": [shift["id"]]})
     client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
     return club_id, headers, token
 
@@ -59,18 +59,24 @@ def test_coordinator_actions_need_the_right_token(client):
     club_id, headers = make_club(client)
     url = f"/api/clubs/{club_id}/members"
     assert client.post(url, json={"name": "Anna"}).status_code == 422
-    assert client.post(url, json={"name": "Anna"}, headers={
-                       "X-Coordinator-Token": "wrong"}).status_code == 403
-    assert client.post(url, json={"name": "Anna"},
-                       headers=headers).status_code == 201
+    assert (
+        client.post(
+            url, json={"name": "Anna"}, headers={"X-Coordinator-Token": "wrong"}
+        ).status_code
+        == 403
+    )
+    assert client.post(url, json={"name": "Anna"}, headers=headers).status_code == 201
 
 
 def test_coordinator_link_check(client):
     club_id, headers = make_club(client)
-    assert client.get(
-        f"/api/clubs/{club_id}/coordinator", headers=headers).status_code == 200
-    assert client.get(f"/api/clubs/{club_id}/coordinator",
-                      headers={"X-Coordinator-Token": "x"}).status_code == 403
+    assert client.get(f"/api/clubs/{club_id}/coordinator", headers=headers).status_code == 200
+    assert (
+        client.get(
+            f"/api/clubs/{club_id}/coordinator", headers={"X-Coordinator-Token": "x"}
+        ).status_code
+        == 403
+    )
 
 
 def test_unknown_member_link_is_404(client):
@@ -86,8 +92,7 @@ def test_member_sees_their_assignment(client):
 
 def test_member_cannot_untick_an_assigned_shift(client):
     _, _, token = published_shift(client)
-    response = client.put(
-        f"/api/me/{token}/availability", json={"shift_ids": []})
+    response = client.put(f"/api/me/{token}/availability", json={"shift_ids": []})
     assert response.status_code == 409
 
 
@@ -97,10 +102,8 @@ def test_done_adds_points_and_no_double_counting(client):
     assert assignment["member_name"] == "Anna" and assignment["shift_type"] == "Bar"
 
     url = f"/api/assignments/{assignment['id']}"
-    assert client.patch(url, json={"status": "done"},
-                        headers=headers).status_code == 200
-    assert client.patch(url, json={"status": "done"},
-                        headers=headers).status_code == 409
+    assert client.patch(url, json={"status": "done"}, headers=headers).status_code == 200
+    assert client.patch(url, json={"status": "done"}, headers=headers).status_code == 409
     assert client.get(f"/api/me/{token}").json()["balance"] == 3
 
 
@@ -143,20 +146,16 @@ def test_times_come_back_in_utc(client):
 
 def test_only_the_coordinator_can_list_member_links(client):
     club_id, headers = make_club(client)
-    client.post(f"/api/clubs/{club_id}/members",
-                json={"name": "Anna"}, headers=headers)
+    client.post(f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers)
     url = f"/api/clubs/{club_id}/members/links"
 
     assert client.get(url).status_code == 422
-    assert client.get(
-        url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
+    assert client.get(url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
     links = client.get(url, headers=headers).json()
     assert links[0]["name"] == "Anna" and links[0]["access_token"]
 
 
 def test_public_member_list_never_shows_tokens(client):
     club_id, headers = make_club(client)
-    client.post(f"/api/clubs/{club_id}/members",
-                json={"name": "Anna"}, headers=headers)
-    assert "access_token" not in client.get(
-        f"/api/clubs/{club_id}/members").json()[0]
+    client.post(f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers)
+    assert "access_token" not in client.get(f"/api/clubs/{club_id}/members").json()[0]

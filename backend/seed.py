@@ -4,6 +4,7 @@ Run locally:        uv run python seed.py
 Run against Neon:   set DATABASE_URL in a terminal opened for that job only, then the same command
 On a fresh database, run `uv run alembic upgrade head` first.
 """
+
 from sqlmodel import Session
 
 from database import engine

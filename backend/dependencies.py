@@ -1,4 +1,5 @@
 """Shared request dependencies: the database session, lookups and access checks."""
+
 import secrets
 from typing import Annotated
 

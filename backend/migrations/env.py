@@ -1,4 +1,5 @@
 """Alembic environment: points migrations at the app's own models and database."""
+
 from logging.config import fileConfig
 
 from alembic import context

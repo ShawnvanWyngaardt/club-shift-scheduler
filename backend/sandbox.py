@@ -2,8 +2,9 @@
 
 Demo clubs are flagged and removed after a day, so visitors never see each other's changes.
 """
+
 import random
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete
@@ -110,7 +111,7 @@ def delete_club(session: Session, club_id: int) -> None:
 
 def remove_expired_demos(session: Session) -> int:
     """Delete demo clubs older than a day. Clubs from the seed script are never touched."""
-    cutoff = datetime.now(timezone.utc) - DEMO_LIFETIME
+    cutoff = datetime.now(UTC) - DEMO_LIFETIME
     expired = list(
         session.exec(
             select(Club.id).where(col(Club.is_demo).is_(True), col(Club.created_at) < cutoff)

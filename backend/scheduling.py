@@ -1,4 +1,5 @@
 """The bridge between the database and the solver: rows in, plain data out, and back again."""
+
 from sqlmodel import Session, col, func, select
 
 from models import (

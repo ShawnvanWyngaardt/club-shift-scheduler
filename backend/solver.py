@@ -1,4 +1,5 @@
 """Shift assignment in plain Python: no DB, so it can be tested on its own for now."""
+
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -31,15 +32,14 @@ class Problem:
 
 @dataclass
 class Result:
-    assignments: list[tuple[int, int]] = field(
-        default_factory=list)  # (shift_id, member_id)
-    unfilled: dict[int, int] = field(
-        default_factory=dict)  # shift_id -> empty slots
+    assignments: list[tuple[int, int]] = field(default_factory=list)  # (shift_id, member_id)
+    unfilled: dict[int, int] = field(default_factory=dict)  # shift_id -> empty slots
 
 
 @dataclass
 class State:
     """What has been decided so far during one solve."""
+
     shifts_of: dict[int, list[ShiftIn]]  # member_id -> shifts assigned so far
     load: dict[int, int]  # member_id -> weight taken on this round
 
@@ -67,8 +67,7 @@ def under_max(member: MemberIn, shift: ShiftIn, problem: Problem, state: State) 
     return len(state.shifts_of[member.id]) < problem.max_shifts_per_member
 
 
-HARD_RULES: list[Rule] = [is_available,
-                          not_already_on_shift, no_overlap, under_max]
+HARD_RULES: list[Rule] = [is_available, not_already_on_shift, no_overlap, under_max]
 
 
 # ---------- Greedy solver ----------
@@ -92,19 +91,16 @@ def solve_greedy(problem: Problem, rules: list[Rule] = HARD_RULES) -> Result:
     # Hardest shifts first: fewest candidates per slot, then heaviest, then earliest.
     order = sorted(
         problem.shifts,
-        key=lambda s: (candidate_count(s, problem) /
-                       s.slots, -s.weight, s.starts_at),
+        key=lambda s: (candidate_count(s, problem) / s.slots, -s.weight, s.starts_at),
     )
 
     for shift in order:
         for _ in range(shift.slots):
             eligible = [
-                m for m in problem.members
-                if all(rule(m, shift, problem, state) for rule in rules)
+                m for m in problem.members if all(rule(m, shift, problem, state) for rule in rules)
             ]
             if not eligible:
-                result.unfilled[shift.id] = result.unfilled.get(
-                    shift.id, 0) + 1
+                result.unfilled[shift.id] = result.unfilled.get(shift.id, 0) + 1
                 continue
             chosen = min(eligible, key=lambda m: fairness_score(m, state))
             result.assignments.append((shift.id, chosen.id))
