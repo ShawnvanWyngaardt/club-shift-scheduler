@@ -27,3 +27,21 @@ export function groupByDay<T extends { starts_at: string }>(items: T[]) {
   }
   return [...groups].map(([day, list]) => ({ day, items: list }))
 }
+
+/** The UTC moment for a date and time on the club's clock, as the API expects it. */
+export function amsterdamToIso(date: string, time: string): string {
+  const wallClockAsUtc = new Date(`${date}T${time}:00Z`)
+  const offset = amsterdamOffsetMinutes(wallClockAsUtc)
+  return new Date(wallClockAsUtc.getTime() - offset * 60_000).toISOString()
+}
+
+function amsterdamOffsetMinutes(at: Date): number {
+  const zoneName =
+    new Intl.DateTimeFormat('en-GB', { timeZone: CLUB_TIMEZONE, timeZoneName: 'longOffset' })
+      .formatToParts(at)
+      .find((part) => part.type === 'timeZoneName')?.value ?? 'GMT'
+  const match = /GMT([+-])(\d{2}):(\d{2})/.exec(zoneName)
+  if (!match) return 0 // a plain "GMT" means no offset
+  const minutes = Number(match[2]) * 60 + Number(match[3])
+  return match[1] === '-' ? -minutes : minutes
+}

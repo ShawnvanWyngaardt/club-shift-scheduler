@@ -66,7 +66,6 @@ Open the links the seed printed:
 
 ## Known limitations (on 25 October 2026)
 
-- No setup screen yet: clubs, members and shifts are created with the seed script or the API.
 - Gaps left open when a schedule is published can't be refilled through the app yet.
 - Links work like passwords: anyone holding one can use it.
 - No notifications; links are shared by hand, for example in WhatsApp.
