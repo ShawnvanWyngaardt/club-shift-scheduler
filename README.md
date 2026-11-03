@@ -78,6 +78,16 @@ Open the links the seed printed:
 - Shared scoreboard screen for members
 - ....any suggestions welcome
 
-### How this was built
+## How this was built
 
-Started builing in October 2026 as a hands-on way to learn Python, with AI assistance (Claude and Claude Code) for explanations, code review and debugging. Every design decision is written down in [`docs/plan.md`](docs/plan.md), and the day-by-day progress, including what went wrong, is in [`docs/journal.md`](docs/journal.md).
+I built this to learn Python hands-on, with AI as a pair programmer: Claude for planning, explanations and code, and Claude Code for debugging inside the editor. I set the direction and the scope, reviewed every change before merging it, and tested it myself.
+
+What that looked like in practice:
+
+- **Plan before code.** The problem, scope, data model and a decision log were written before the first endpoint. Every significant choice has a rejected alternative and a reason: see the [plan](docs/plan.md).
+- **Review, not copy and paste.** Code came with explanations, split into what I needed to understand and what was boilerplate. I ran it, broke it on purpose to see which tests would catch it, and only merged what I could explain.
+- **Catching what AI gets wrong.** A generated database migration that tried to drop a table I had never created led me to a config file that was silently pointing every local command at the production database. Another migration set a default that works on SQLite but would have failed on PostgreSQL. Both were caught before they shipped.
+- **Tests and CI as the safety net.** Backend and frontend tests, linting and a migration check run on every push, including tests around the October clock change.
+- **Real users over assumptions.** The first user test found no bugs, but four places where the app didn't explain itself. They're now part of the [v0.2.0 plan](docs/plan-v0.2.md).
+
+The day-by-day story, including what went wrong, is in the [build journal](docs/journal.md).
