@@ -1,8 +1,18 @@
 export interface MemberProfile {
+  member_id: number
   name: string
   club_id: number
   club_name: string
   balance: number
+}
+
+export interface MyAssignment {
+  id: number
+  shift_type: string
+  weight: number
+  starts_at: string
+  ends_at: string
+  status: AssignmentStatus
 }
 
 export interface MyShift {
@@ -43,6 +53,8 @@ const member = (token: string) => `/me/${encodeURIComponent(token)}`
 export const api = {
   me: (token: string) => request<MemberProfile>(member(token)),
   myShifts: (token: string) => request<MyShift[]>(`${member(token)}/shifts`),
+  myAssignments: (token: string) => request<MyAssignment[]>(`${member(token)}/assignments`),
+  ledger: (clubId: number) => request<Ledger>(`/clubs/${clubId}/ledger`),
   saveAvailability: (token: string, shiftIds: number[]) =>
     request<MyShift[]>(`${member(token)}/availability`, {
       method: 'PUT',
@@ -84,8 +96,16 @@ export interface AssignmentDetail {
   weight: number
 }
 
+export interface LedgerEntry {
+  member_id: number
+  change: number
+  reason: string
+  created_at: string
+}
+
 export interface Ledger {
   balances: { member_id: number; name: string; balance: number }[]
+  entries: LedgerEntry[]
 }
 
 const club = (clubId: number) => `/clubs/${clubId}`

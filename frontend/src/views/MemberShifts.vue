@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile, type MyShift } from '@/api'
-import { formatDay, formatTimeRange } from '@/time'
+import { formatTimeRange, groupByDay } from '@/time'
 
-const props = defineProps<{ token: string }>()
+const props = defineProps<{ token: string; profile?: MemberProfile }>()
 
-const profile = ref<MemberProfile | null>(null)
 const shifts = ref<MyShift[]>([])
 const selected = ref(new Set<number>())
-const pageState = ref<'loading' | 'ready' | 'invalid' | 'error'>('loading')
+const state = ref<'loading' | 'ready' | 'error'>('loading')
 const saveState = ref<'idle' | 'saving' | 'saved' | 'failed'>('idle')
 const saveMessage = ref('')
 
@@ -18,14 +17,12 @@ function applyShifts(list: MyShift[]) {
 }
 
 async function load() {
-  pageState.value = 'loading'
+  state.value = 'loading'
   try {
-    const [me, mine] = await Promise.all([api.me(props.token), api.myShifts(props.token)])
-    profile.value = me
-    applyShifts(mine)
-    pageState.value = 'ready'
-  } catch (error) {
-    pageState.value = error instanceof ApiError && error.status === 404 ? 'invalid' : 'error'
+    applyShifts(await api.myShifts(props.token))
+    state.value = 'ready'
+  } catch {
+    state.value = 'error'
   }
 }
 
@@ -53,42 +50,29 @@ async function save() {
   }
 }
 
-const days = computed(() => {
-  const groups = new Map<string, MyShift[]>()
-  for (const shift of shifts.value) {
-    const day = formatDay(shift.starts_at)
-    groups.set(day, [...(groups.get(day) ?? []), shift])
-  }
-  return [...groups].map(([day, items]) => ({ day, items }))
-})
+const days = computed(() => groupByDay(shifts.value))
+const ticked = computed(() => shifts.value.filter((s) => selected.value.has(s.id)).length)
 
 onMounted(load)
 </script>
 
 <template>
   <main class="page">
-    <p v-if="pageState === 'loading'" class="muted">Loading your shifts…</p>
+    <p v-if="state === 'loading'" class="muted">Loading your shifts…</p>
 
-    <section v-else-if="pageState === 'invalid'">
-      <h1>This link doesn't work</h1>
-      <p class="muted">Ask your club's coordinator to send you a new one.</p>
-    </section>
-
-    <section v-else-if="pageState === 'error'">
-      <h1>Something went wrong</h1>
-      <p class="muted">We couldn't load your shifts.</p>
+    <section v-else-if="state === 'error'">
+      <p class="error">We couldn't load your shifts.</p>
       <button type="button" @click="load">Try again</button>
     </section>
 
-    <template v-else-if="profile">
-      <header class="header">
-        <p class="muted">{{ profile.club_name }}</p>
-        <h1>Hi {{ profile.name }}</h1>
-        <p>
-          <strong>{{ profile.balance }} points</strong> this season. Fewer points means you're first
-          in line for the next shift.
+    <template v-else>
+      <section class="explain">
+        <h2>Which shifts could you do?</h2>
+        <p class="muted">
+          Tick every shift you could help with, then save. These are your answers, not a schedule:
+          the coordinator's schedule decides who goes, and members with the fewest points go first.
         </p>
-      </header>
+      </section>
 
       <p v-if="shifts.length === 0" class="muted">
         No upcoming shifts yet. Check back after your coordinator adds some.
@@ -113,17 +97,18 @@ onMounted(load)
               <span class="shift-name">{{ shift.shift_type }}</span>
               <span class="muted">{{ formatTimeRange(shift.starts_at, shift.ends_at) }}</span>
             </span>
-            <span v-if="shift.assigned" class="tag">Assigned to you</span>
+            <span v-if="shift.assigned" class="tag">Yours · +{{ shift.weight }} points</span>
             <span v-else class="points">+{{ shift.weight }} points</span>
           </label>
         </fieldset>
 
         <div class="actions">
+          <p class="muted count">{{ ticked }} of {{ shifts.length }} ticked as "I could do this"</p>
           <button type="submit" :disabled="saveState === 'saving'">
-            {{ saveState === 'saving' ? 'Saving…' : 'Save my availability' }}
+            {{ saveState === 'saving' ? 'Saving…' : 'Save my answers' }}
           </button>
           <p v-if="saveState === 'saved'" class="ok" role="status">
-            Saved. You can close this page.
+            Saved. Your answers stay until you change them.
           </p>
           <p v-if="saveState === 'failed'" class="error" role="alert">
             {{ saveMessage }} Your ticks are kept, so try again.
@@ -135,7 +120,11 @@ onMounted(load)
 </template>
 
 <style scoped>
-.header {
+.explain h2 {
+  font-size: 1.25rem;
+  margin: 0 0 var(--space-2);
+}
+.explain {
   margin-bottom: var(--space-6);
 }
 .day {
@@ -189,10 +178,10 @@ legend {
 .actions button {
   width: 100%;
 }
+.count {
+  margin: 0 0 var(--space-2);
+}
 .ok {
   color: var(--color-ok);
-}
-.error {
-  color: var(--color-error);
 }
 </style>

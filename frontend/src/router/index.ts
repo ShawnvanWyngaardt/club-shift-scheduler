@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import MemberAssignments from '@/views/MemberAssignments.vue'
+import MemberLayout from '@/views/MemberLayout.vue'
 import MemberShifts from '@/views/MemberShifts.vue'
+import MemberStandings from '@/views/MemberStandings.vue'
 import NotFound from '@/views/NotFound.vue'
 import CoordinatorLayout from '@/views/CoordinatorLayout.vue'
 import LandingView from '@/views/LandingView.vue'
@@ -20,10 +23,19 @@ const router = createRouter({
     },
     {
       path: '/m/:token',
-      name: 'member',
-      component: MemberShifts,
+      component: MemberLayout,
       props: true,
       meta: { title: 'My shifts' },
+      children: [
+        { path: '', name: 'member', component: MemberShifts, props: true },
+        {
+          path: 'assignments',
+          name: 'member-assignments',
+          component: MemberAssignments,
+          props: true,
+        },
+        { path: 'standings', name: 'member-standings', component: MemberStandings, props: true },
+      ],
     },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFound },
     {
