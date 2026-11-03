@@ -86,3 +86,16 @@ def test_spreads_load_between_equal_members():
     )
     assigned_members = {member_id for _, member_id in solve_greedy(problem).assignments}
     assert assigned_members == {1, 2}
+
+
+def test_shifts_already_held_count_for_overlaps():
+    held = make_shift(10, day=24, start=9, end=12)
+    problem = Problem(
+        members=[MemberIn(1, "Anna")],
+        shifts=[make_shift(11, day=24, start=11, end=13)],
+        available={(1, 11)},
+        already_assigned={1: [held]},
+    )
+    result = solve_greedy(problem)
+    assert result.assignments == []
+    assert result.unfilled == {11: 1}

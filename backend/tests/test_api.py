@@ -1,6 +1,6 @@
 """API tests: the whole fairness loop through HTTP, on a throwaway in-memory database."""
 
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -10,6 +10,13 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from database import get_session
 from main import app
+
+
+def future_saturday(hour: int) -> str:
+    """An Amsterdam time on the coming Saturday, so tests never fall into the past."""
+    today = date.today()
+    saturday = today + timedelta(days=(5 - today.weekday()) % 7 or 7)
+    return datetime.combine(saturday, time(hour), ZoneInfo("Europe/Amsterdam")).isoformat()
 
 
 @pytest.fixture
@@ -46,8 +53,8 @@ def published_shift(client):
         f"/api/clubs/{club_id}/shifts",
         json={
             "shift_type_id": shift_type["id"],
-            "starts_at": "2026-10-24T07:00:00+02:00",
-            "ends_at": "2026-10-24T10:00:00+02:00",
+            "starts_at": future_saturday(7),
+            "ends_at": future_saturday(10),
             "slots": 1,
         },
         headers=headers,
@@ -251,3 +258,77 @@ def test_shift_type_in_use_cannot_be_deleted(client):
         ).status_code
         == 204
     )
+
+
+def test_partly_filled_shift_gets_refilled(client):
+    club_id, headers = make_club(client)
+    anna = client.post(
+        f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers
+    ).json()
+    bram = client.post(
+        f"/api/clubs/{club_id}/members", json={"name": "Bram"}, headers=headers
+    ).json()
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shift = client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": future_saturday(7),
+            "ends_at": future_saturday(10),
+            "slots": 2,
+        },
+        headers=headers,
+    ).json()
+
+    client.put(f"/api/me/{anna['access_token']}/availability", json={"shift_ids": [shift["id"]]})
+    first = client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers).json()
+    assert [a["member_name"] for a in first["assignments"]] == ["Anna"]
+    assert first["unfilled"] == [{"shift_id": shift["id"], "missing": 1}]
+
+    client.put(f"/api/me/{bram['access_token']}/availability", json={"shift_ids": [shift["id"]]})
+    second = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
+    assert [a["member_name"] for a in second["assignments"]] == ["Bram"]
+    assert second["unfilled"] == []
+
+
+def test_past_shifts_are_hidden_and_never_scheduled(client):
+    club_id, headers = make_club(client)
+    member = client.post(
+        f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers
+    ).json()
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shifts_url = f"/api/clubs/{club_id}/shifts"
+    past = client.post(
+        shifts_url,
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": "2020-01-04T07:00:00+01:00",
+            "ends_at": "2020-01-04T10:00:00+01:00",
+            "slots": 1,
+        },
+        headers=headers,
+    ).json()
+    upcoming = client.post(
+        shifts_url,
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": future_saturday(7),
+            "ends_at": future_saturday(10),
+            "slots": 1,
+        },
+        headers=headers,
+    ).json()
+
+    token = member["access_token"]
+    assert [s["id"] for s in client.get(f"/api/me/{token}/shifts").json()] == [upcoming["id"]]
+    assert (
+        client.put(f"/api/me/{token}/availability", json={"shift_ids": [past["id"]]}).status_code
+        == 422
+    )
+
+    proposal = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
+    assert past["id"] not in [u["shift_id"] for u in proposal["unfilled"]]

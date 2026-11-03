@@ -28,6 +28,8 @@ class Problem:
     shifts: list[ShiftIn]
     available: set[tuple[int, int]]  # (member_id, shift_id) pairs
     max_shifts_per_member: int = 2
+    # Shifts members already hold from earlier publishes: they count for overlaps, limits and load.
+    already_assigned: dict[int, list[ShiftIn]] = field(default_factory=dict)
 
 
 @dataclass
@@ -83,8 +85,11 @@ def candidate_count(shift: ShiftIn, problem: Problem) -> int:
 
 def solve_greedy(problem: Problem, rules: list[Rule] = HARD_RULES) -> Result:
     state = State(
-        shifts_of={m.id: [] for m in problem.members},
-        load={m.id: 0 for m in problem.members},
+        shifts_of={m.id: list(problem.already_assigned.get(m.id, [])) for m in problem.members},
+        load={
+            m.id: sum(s.weight for s in problem.already_assigned.get(m.id, []))
+            for m in problem.members
+        },
     )
     result = Result()
 
