@@ -160,3 +160,28 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Learned:** never build shift times with the browser's own timezone: a visitor in London would create shifts an hour off. The frontend now converts from Amsterdam time explicitly, with a test on both sides of the clock change.
 - **Noticed for the UX review:** the browser's confirm dialogs don't belong to the app's interface, and "Remove this type's shifts first" says what the system refuses but not why or what to do. Parked in `docs/v2-ideas.md` for the redesign.
 - **TBD:** Add `docs/v2-ideas.md`...
+
+## Tue 3 Nov: the member side answers back
+
+- **Built:** session 8, refill only the open slots of a partly filled shift, and hide past shifts from members and the solver. Existing assignments now count towards overlaps and load, so a refill never double-books anyone.
+- **Built:** session 9, the schedule screen shows who already holds each shift, what still needs people, and a preview that marks the newly added people.
+- **Built:** session 10, member tabs straight from the user test findings: "My answers" (availability), "My shifts" (coming up, past outcomes, how the points were earned) and "Club points".
+- **Built:** rewrote the "How this was built" section of the README.
+
+### From finding to fix
+
+| What my first tester saw                                | What changed                                                                                                       |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Saved ticks read as "automatically selected"            | The tab is now "My answers", with copy saying these are her answers, not a schedule                                |
+| An assigned shift read as an order from the coordinator | Each upcoming shift says "Why you: you said you could do this shift, and members with the fewest points go first." |
+| Assigned shifts showed no points                        | Points shown on every shift, assigned or not                                                                       |
+| "I don't see anything different" after an outcome       | Past shifts show done or no-show with the points, plus the ledger entries behind the balance                       |
+
+- **Decision:** "Why you" states the rule, not a claim about this one decision. The solver also weighs load within a round, so "you had the fewest points" isn't always literally true. Interface copy has to be accurate, not just friendly.
+- **Decision:** club points are listed alphabetically, not by points. Sorted by points, the same list becomes a leaderboard, which rewards collecting points instead of sharing the work.
+- **Decision:** an invalid member link shows the shared NotFound page, rendered in place rather than redirected, so the URL stays visible to copy to the coordinator. It carries one extra line: ask your coordinator for a new link. A server failure keeps its own "Something went wrong" with Try again, because retrying can fix that one.
+- **Decision:** no release tag yet. The coordinator override (remove or reassign someone on an upcoming shift) comes before session 11 and `v0.2.0`, because a coordinator who can't replace a sick volunteer is the first gap a real club would hit.
+- **Went wrong:** frontend-only merges stopped deploying again. The `backend/**` and `frontend/**` build filters had disappeared from the Render settings. Re-added them and confirmed with a frontend-only push. Still planned: a deploy job in GitHub Actions, so deploys only follow green CI and don't depend on those filters.
+- **Learned:** the difference between a table model and a response model. `Assignment` stores ids and a status; `MyAssignment` is the shape the member's screen needs, built from the assignment, its shift and its shift type in one query.
+- **Learned:** a view is just a component. The router decides which URL shows it, but a layout can render it too, which keeps the URL intact.
+- **Noted:** the generated UI works, but it isn't how I build frontends. That is the v0.3.0 redesign, after the flows are complete, so I don't restyle screens that are still changing.
