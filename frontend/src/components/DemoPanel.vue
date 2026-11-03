@@ -35,7 +35,10 @@ async function copyLink(token: string) {
         </button>
       </li>
       <li>Come back to this tab and generate a schedule.</li>
-      <li>Publish it, then refresh the member page to see what you were given.</li>
+      <li>
+        Publish it, then open the member's <strong>My shifts</strong> tab to see what you were given
+        and why.
+      </li>
     </ol>
 
     <details>
