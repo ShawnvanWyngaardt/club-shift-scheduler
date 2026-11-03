@@ -159,3 +159,4 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Went wrong:** successful deletes looked like errors, because the frontend tried to read a response body from a 204 reply that has none. Fixed in the shared request function, which now also shows readable validation messages.
 - **Learned:** never build shift times with the browser's own timezone: a visitor in London would create shifts an hour off. The frontend now converts from Amsterdam time explicitly, with a test on both sides of the clock change.
 - **Noticed for the UX review:** the browser's confirm dialogs don't belong to the app's interface, and "Remove this type's shifts first" says what the system refuses but not why or what to do. Parked in `docs/v2-ideas.md` for the redesign.
+- **TBD:** Add `docs/v2-ideas.md`...
