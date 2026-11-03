@@ -1,7 +1,9 @@
 """Everything a member does through their personal link."""
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from dependencies import SessionDep, get_member_by_token
 from models import (
@@ -20,11 +22,21 @@ from scheduling import points_by_member
 router = APIRouter(prefix="/api/me", tags=["member link"])
 
 
+def upcoming_shift_ids(club_id: int, session: Session) -> set[int]:
+    now = datetime.now(UTC)
+    statement = select(Shift.id).where(Shift.club_id == club_id, col(Shift.starts_at) > now)
+    return set(session.exec(statement).all())
+
+
 def my_shifts(member: Member, session: Session) -> list[MyShift]:
     """All shifts in the member's club, with their availability and assignments."""
     rows = session.exec(
         select(Shift, ShiftType)
-        .where(Shift.club_id == member.club_id, Shift.shift_type_id == ShiftType.id)
+        .where(
+            Shift.club_id == member.club_id,
+            Shift.shift_type_id == ShiftType.id,
+            col(Shift.starts_at) > datetime.now(UTC),
+        )
         .order_by(Shift.starts_at)
     ).all()
     chosen = set(
@@ -33,6 +45,7 @@ def my_shifts(member: Member, session: Session) -> list[MyShift]:
     assigned = set(
         session.exec(select(Assignment.shift_id).where(Assignment.member_id == member.id)).all()
     )
+
     return [
         MyShift(
             id=shift.id,
@@ -67,16 +80,20 @@ def update_my_availability(
     token: str, data: AvailabilityUpdate, session: SessionDep
 ) -> list[MyShift]:
     member = get_member_by_token(token, session)
+    upcoming = upcoming_shift_ids(member.club_id, session)
 
-    club_shift_ids = set(
-        session.exec(select(Shift.id).where(Shift.club_id == member.club_id)).all()
-    )
-    unknown = set(data.shift_ids) - club_shift_ids
+    unknown = set(data.shift_ids) - upcoming
     if unknown:
-        raise HTTPException(status_code=422, detail=f"Not shifts in your club: {sorted(unknown)}")
+        raise HTTPException(
+            status_code=422, detail=f"Not upcoming shifts in your club: {sorted(unknown)}"
+        )
 
     assigned = set(
-        session.exec(select(Assignment.shift_id).where(Assignment.member_id == member.id)).all()
+        session.exec(
+            select(Assignment.shift_id).where(
+                Assignment.member_id == member.id, col(Assignment.shift_id).in_(upcoming)
+            )
+        ).all()
     )
     dropped = assigned - set(data.shift_ids)
     if dropped:
@@ -85,8 +102,13 @@ def update_my_availability(
             detail=f"Already assigned to you, ask your coordinator to swap: {sorted(dropped)}",
         )
 
-    # Replace the member's answers completely: remove the old ones, then add the new ones.
-    for old in session.exec(select(Availability).where(Availability.member_id == member.id)).all():
+    # Replace the answers for upcoming shifts only; answers for past shifts stay as a record.
+    old_answers = session.exec(
+        select(Availability).where(
+            Availability.member_id == member.id, col(Availability.shift_id).in_(upcoming)
+        )
+    ).all()
+    for old in old_answers:
         session.delete(old)
     session.flush()
     for shift_id in set(data.shift_ids):
