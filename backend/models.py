@@ -142,13 +142,27 @@ class MyShift(SQLModel):
 class MemberProfile(SQLModel):
     """A member's own view of themselves: name, club and balance."""
 
+    member_id: int
     name: str
     club_id: int
     club_name: str
     balance: int
 
 
+class MyAssignment(SQLModel):
+    """A shift given to this member, and what happened."""
+
+    id: int
+    shift_type: str
+    weight: int
+    starts_at: datetime
+    ends_at: datetime
+    status: str
+
+
 # ---------- Assignments and points ----------
+
+
 class Assignment(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     shift_id: int | None = Field(foreign_key="shift.id", index=True)
