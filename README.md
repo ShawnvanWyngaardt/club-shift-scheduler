@@ -80,4 +80,4 @@ Open the links the seed printed:
 
 ### How this was built
 
-Built over one week in October 2026 as a hands-on way to learn Python, with AI assistance (Claude and Claude Code) for explanations, code review and debugging. Every design decision is written down in [`docs/plan.md`](docs/plan.md), and the day-by-day progress, including what went wrong, is in [`docs/journal.md`](docs/journal.md).
+Started builing in October 2026 as a hands-on way to learn Python, with AI assistance (Claude and Claude Code) for explanations, code review and debugging. Every design decision is written down in [`docs/plan.md`](docs/plan.md), and the day-by-day progress, including what went wrong, is in [`docs/journal.md`](docs/journal.md).
