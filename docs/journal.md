@@ -147,3 +147,15 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Decision:** split the session into a backend and a frontend pull request, so a busy day could stop after either one without leaving work half-done.
 - **Tidied:** one file for all link builders, and deleted old merged branches locally and on GitHub.
 - **Noticed:** VS Code's Problems tab had a mix of real issues and false alarms, and nothing enforced code style. The plan had listed Ruff since day one, but it was never set up; it's the next thing to add.
+
+## Mon 2 Nov: setup complete, and linting that bites
+
+- **Built:** Ruff for the backend and oxlint plus ESLint for the frontend, now enforced in CI. Then the rest of the Setup tab: shift types with their points, and shifts that can repeat weekly. The backend gained safe deletes for members, shifts and shift types.
+- **Decision:** linting runs in CI without auto-fixing, so a problem fails the build instead of being quietly changed. The one-off formatting pass went into its own commit, so it doesn't hide real changes.
+- **Decision:** weekly shifts repeat in Amsterdam time, not UTC, so a 07:00 shift stays 07:00 after the clocks change. A test pins it to the real dates around 25 October.
+- **Decision:** deletes refuse instead of cascading. A member with points stays, because the ledger is append-only; a scheduled shift stays, because someone was told to turn up. Each refusal returns a reason.
+- **Decision:** split the Setup page into three components (members, shift types, shifts). The page loads the shift types once and passes them down; the sections tell it when something changed.
+- **Went wrong, caught by the linter:** VS Code had auto-imported `server` from the TypeScript package into the Vite config when I typed a `server:` setting. Unused, and the first thing oxlint flagged.
+- **Went wrong:** successful deletes looked like errors, because the frontend tried to read a response body from a 204 reply that has none. Fixed in the shared request function, which now also shows readable validation messages.
+- **Learned:** never build shift times with the browser's own timezone: a visitor in London would create shifts an hour off. The frontend now converts from Amsterdam time explicitly, with a test on both sides of the clock change.
+- **Noticed for the UX review:** the browser's confirm dialogs don't belong to the app's interface, and "Remove this type's shifts first" says what the system refuses but not why or what to do. Parked in `docs/v2-ideas.md` for the redesign.
