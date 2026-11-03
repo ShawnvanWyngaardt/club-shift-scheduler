@@ -1,9 +1,17 @@
+<script setup lang="ts">
+defineProps<{ hint?: string }>()
+</script>
+
 <template>
   <main class="page">
-    <h1>
-      Welcome! It seems the page you're looking for hasn't been built yet. OR James deleted it.
-    </h1>
-    <h2>How do I see any progress you ask...</h2>
+    <h1>Congratulations! You found the error page.</h1>
+    <p class="muted">{{ hint ?? "This page doesn't exist or the link is incomplete." }}</p>
+    <p>
+      If the above doesn't provide you with any comfort or way forward, it was James who deleted it
+      and we are looking to fire him. Or put him on toilet duty at your club.
+    </p>
+
+    <h2>How do I see any progress on the App you ask...</h2>
     <p class="muted">
       While still in its early versions, you're welcome to have a look at the following
       <a

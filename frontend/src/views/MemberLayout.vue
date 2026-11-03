@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile } from '@/api'
+import NotFound from '@/views/NotFound.vue'
 
 const props = defineProps<{ token: string }>()
 
@@ -25,10 +26,10 @@ onMounted(load)
     <p class="muted">Loading…</p>
   </main>
 
-  <main v-else-if="state === 'invalid'" class="page">
-    <h1>This link doesn't work</h1>
-    <p class="muted">Ask your club's coordinator to send you a new one.</p>
-  </main>
+  <NotFound
+    v-else-if="state === 'invalid'"
+    hint="This link doesn't work any more. Ask your club's coordinator to send you a new one."
+  />
 
   <main v-else-if="state === 'error'" class="page">
     <h1>Something went wrong</h1>
