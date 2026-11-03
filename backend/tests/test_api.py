@@ -332,3 +332,18 @@ def test_past_shifts_are_hidden_and_never_scheduled(client):
 
     proposal = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
     assert past["id"] not in [u["shift_id"] for u in proposal["unfilled"]]
+
+
+def test_member_sees_their_assignments_and_outcomes(client):
+    club_id, headers, token = published_shift(client)
+
+    mine = client.get(f"/api/me/{token}/assignments").json()
+    assert [(a["shift_type"], a["status"]) for a in mine] == [("Bar", "assigned")]
+
+    client.patch(f"/api/assignments/{mine[0]['id']}", json={"status": "done"}, headers=headers)
+    assert client.get(f"/api/me/{token}/assignments").json()[0]["status"] == "done"
+
+    me = client.get(f"/api/me/{token}").json()
+    links = client.get(f"/api/clubs/{club_id}/members/links", headers=headers).json()
+    assert me["member_id"] == links[0]["id"]
+    assert me["balance"] == 3

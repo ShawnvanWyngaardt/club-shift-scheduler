@@ -13,6 +13,7 @@ from models import (
     Club,
     Member,
     MemberProfile,
+    MyAssignment,
     MyShift,
     Shift,
     ShiftType,
@@ -66,7 +67,13 @@ def read_me(token: str, session: SessionDep) -> MemberProfile:
     member = get_member_by_token(token, session)
     club = session.get(Club, member.club_id)
     balance = points_by_member(member.club_id, session).get(member.id, 0)
-    return MemberProfile(name=member.name, club_id=club.id, club_name=club.name, balance=balance)
+    return MemberProfile(
+        member_id=member.id,
+        name=member.name,
+        club_id=club.id,
+        club_name=club.name,
+        balance=balance,
+    )
 
 
 @router.get("/{token}/shifts", response_model=list[MyShift])
@@ -116,3 +123,29 @@ def update_my_availability(
     session.commit()
 
     return my_shifts(member, session)
+
+
+@router.get("/{token}/assignments", response_model=list[MyAssignment])
+def read_my_assignments(token: str, session: SessionDep) -> list[MyAssignment]:
+    """Every shift given to this member, past and upcoming, with its outcome."""
+    member = get_member_by_token(token, session)
+    rows = session.exec(
+        select(Assignment, Shift, ShiftType)
+        .where(
+            Assignment.member_id == member.id,
+            Assignment.shift_id == Shift.id,
+            Shift.shift_type_id == ShiftType.id,
+        )
+        .order_by(col(Shift.starts_at))
+    ).all()
+    return [
+        MyAssignment(
+            id=assignment.id,
+            shift_type=shift_type.name,
+            weight=shift_type.weight,
+            starts_at=shift.starts_at,
+            ends_at=shift.ends_at,
+            status=assignment.status,
+        )
+        for assignment, shift, shift_type in rows
+    ]
