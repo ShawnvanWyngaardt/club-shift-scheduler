@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ApiError, coordinatorApi, type Proposal, type ShiftDetail } from '@/api'
+import {
+  ApiError,
+  coordinatorApi,
+  type AssignmentDetail,
+  type Proposal,
+  type ShiftDetail,
+} from '@/api'
 import { formatDay, formatTimeRange, groupByDay } from '@/time'
 
 const props = defineProps<{ clubId: string; token: string }>()
 const clubId = computed(() => Number(props.clubId))
 
 const shifts = ref<ShiftDetail[]>([])
-const scheduledIds = ref(new Set<number>())
+const assignments = ref<AssignmentDetail[]>([])
 const balances = ref(new Map<number, number>())
 const proposal = ref<Proposal | null>(null)
 const phase = ref<'loading' | 'error' | 'ready' | 'generating' | 'preview' | 'publishing'>(
@@ -23,13 +29,13 @@ const errorText = (error: unknown) =>
 async function load() {
   phase.value = 'loading'
   try {
-    const [allShifts, assignments, ledger] = await Promise.all([
+    const [allShifts, allAssignments, ledger] = await Promise.all([
       coordinatorApi.shifts(clubId.value),
       coordinatorApi.assignments(clubId.value),
       coordinatorApi.ledger(clubId.value),
     ])
     shifts.value = allShifts
-    scheduledIds.value = new Set(assignments.map((a) => a.shift_id))
+    assignments.value = allAssignments
     balances.value = new Map(ledger.balances.map((b) => [b.member_id, b.balance]))
     proposal.value = null
     phase.value = 'ready'
@@ -66,19 +72,54 @@ async function publish() {
 }
 
 const busy = computed(() => phase.value === 'generating' || phase.value === 'publishing')
-const openShifts = computed(() => shifts.value.filter((s) => !scheduledIds.value.has(s.id)))
+const withPoints = (memberId: number, name: string) =>
+  `${name} (${balances.value.get(memberId) ?? 0} pts)`
+
+/** Who already holds each shift, from earlier publishes. */
+const holders = computed(() => {
+  const map = new Map<number, string[]>()
+  for (const a of assignments.value) {
+    map.set(a.shift_id, [...(map.get(a.shift_id) ?? []), withPoints(a.member_id, a.member_name)])
+  }
+  return map
+})
+
+// Mirrors the backend rule: only shifts that haven't started yet can be scheduled.
+const upcoming = computed(() => {
+  const now = Date.now()
+  return shifts.value.filter((s) => new Date(s.starts_at).getTime() > now)
+})
+
+const openShifts = computed(() =>
+  upcoming.value
+    .map((s) => {
+      const held = holders.value.get(s.id) ?? []
+      return { ...s, held, missing: s.slots - held.length }
+    })
+    .filter((s) => s.missing > 0),
+)
+const emptySlots = computed(() => openShifts.value.reduce((sum, s) => sum + s.missing, 0))
+const fullyStaffed = computed(() => upcoming.value.length - openShifts.value.length)
+const openDays = computed(() => groupByDay(openShifts.value))
 
 const previewRows = computed(() => {
   if (!proposal.value) return []
-  const people = new Map<number, string[]>()
+  const added = new Map<number, string[]>()
   for (const a of proposal.value.assignments) {
-    const label = `${a.member_name} (${balances.value.get(a.member_id) ?? 0} pts)`
-    people.set(a.shift_id, [...(people.get(a.shift_id) ?? []), label])
+    added.set(a.shift_id, [
+      ...(added.get(a.shift_id) ?? []),
+      withPoints(a.member_id, a.member_name),
+    ])
   }
   const missing = new Map(proposal.value.unfilled.map((u) => [u.shift_id, u.missing]))
   return shifts.value
-    .filter((s) => people.has(s.id) || missing.has(s.id))
-    .map((s) => ({ ...s, people: people.get(s.id) ?? [], missing: missing.get(s.id) ?? 0 }))
+    .filter((s) => added.has(s.id) || missing.has(s.id))
+    .map((s) => ({
+      ...s,
+      held: holders.value.get(s.id) ?? [],
+      added: added.get(s.id) ?? [],
+      missing: missing.get(s.id) ?? 0,
+    }))
 })
 
 const gapRows = computed(() => previewRows.value.filter((row) => row.missing > 0))
@@ -102,28 +143,55 @@ onMounted(load)
       <header class="intro">
         <h1>Schedule</h1>
         <p class="muted">
-          {{ openShifts.length }} shifts not scheduled yet · {{ scheduledIds.size }} already
-          published
+          {{ openShifts.length }} upcoming
+          {{ openShifts.length === 1 ? 'shift needs' : 'shifts need' }} people ({{
+            emptySlots
+          }}
+          empty {{ emptySlots === 1 ? 'slot' : 'slots' }}) · {{ fullyStaffed }} fully staffed
         </p>
       </header>
 
       <p v-if="published" class="ok" role="status">Published. Members can now see their shifts.</p>
       <p v-if="actionError" class="error" role="alert">{{ actionError }}</p>
 
-      <p v-if="!proposal && openShifts.length === 0" class="muted">
-        Nothing to schedule: every shift has been published.
-      </p>
+      <!-- Before generating: what still needs people -->
+      <template v-if="!proposal">
+        <p v-if="upcoming.length === 0" class="muted">
+          No upcoming shifts.
+          <RouterLink :to="{ name: 'setup', params: { clubId, token } }"
+            >Add some in Setup</RouterLink
+          >.
+        </p>
+        <p v-else-if="openShifts.length === 0" class="muted">
+          Every upcoming shift has enough people.
+        </p>
 
-      <div v-else-if="!proposal" class="actions">
-        <button type="button" :disabled="busy" @click="generate">
-          {{ phase === 'generating' ? 'Generating…' : 'Generate a schedule' }}
-        </button>
-        <p class="muted">Nothing is saved until you publish.</p>
-      </div>
+        <template v-else>
+          <div class="actions">
+            <button type="button" :disabled="busy" @click="generate">
+              {{ phase === 'generating' ? 'Generating…' : 'Generate a schedule' }}
+            </button>
+            <p class="muted">Nothing is saved until you publish.</p>
+          </div>
 
+          <section v-for="group in openDays" :key="group.day" class="day">
+            <h2>{{ group.day }}</h2>
+            <article v-for="shift in group.items" :key="shift.id" class="shift">
+              <div class="shift-head">
+                <span class="shift-name">{{ shift.shift_type }}</span>
+                <span class="muted">{{ formatTimeRange(shift.starts_at, shift.ends_at) }}</span>
+                <span class="muted">{{ shift.held.length }} of {{ shift.slots }} filled</span>
+              </div>
+              <p class="people">{{ shift.held.length ? shift.held.join(', ') : 'Nobody yet' }}</p>
+            </article>
+          </section>
+        </template>
+      </template>
+
+      <!-- After generating: the proposal -->
       <template v-else>
         <section class="gaps" :class="{ 'gaps-none': totalMissing === 0 }" aria-live="polite">
-          <h2 v-if="totalMissing === 0">Every slot is filled</h2>
+          <h2 v-if="totalMissing === 0">Every slot can be filled</h2>
           <template v-else>
             <h2>
               {{ totalMissing }} {{ totalMissing === 1 ? 'slot still needs' : 'slots still need' }}
@@ -137,8 +205,8 @@ onMounted(load)
               </li>
             </ul>
             <p>
-              Ask around in the club chat, then generate again. If you publish now, these gaps stay
-              open: the app can't fill them later yet.
+              Ask around in the club chat. You can publish now and generate again later: open slots
+              stay open until someone is available.
             </p>
           </template>
         </section>
@@ -154,9 +222,16 @@ onMounted(load)
             <div class="shift-head">
               <span class="shift-name">{{ row.shift_type }}</span>
               <span class="muted">{{ formatTimeRange(row.starts_at, row.ends_at) }}</span>
-              <span class="muted">{{ row.slots - row.missing }} of {{ row.slots }} filled</span>
+              <span class="muted">
+                {{ row.held.length + row.added.length }} of {{ row.slots }} filled
+              </span>
             </div>
-            <p v-if="row.people.length" class="people">{{ row.people.join(', ') }}</p>
+            <p v-if="row.held.length || row.added.length" class="people">
+              <span v-for="name in row.held" :key="`held-${name}`" class="person">{{ name }}</span>
+              <span v-for="name in row.added" :key="`new-${name}`" class="person">
+                {{ name }} <span class="tag-new">new</span>
+              </span>
+            </p>
             <p v-if="row.missing > 0" class="gap-note">{{ row.missing }} missing</p>
           </article>
         </section>
@@ -220,7 +295,17 @@ h2 {
   font-weight: 600;
 }
 .people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1, 4px) var(--space-3);
   margin: var(--space-2) 0 0;
+}
+.tag-new {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
 }
 .gap-note {
   margin: var(--space-2) 0 0;
@@ -239,8 +324,5 @@ h2 {
 }
 .ok {
   color: var(--color-ok);
-}
-.error {
-  color: var(--color-error);
 }
 </style>
