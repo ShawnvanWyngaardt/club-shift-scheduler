@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from sqlmodel import select
 
-from dependencies import CoordinatorClub, SessionDep, get_club_or_404
+from dependencies import CoordinatorClub, SessionDep
 from models import Assignment, AssignmentDetail, Member, Proposal, Shift, ShiftType
 from scheduling import build_problem, to_proposal
 from solver import solve_greedy
@@ -30,8 +30,7 @@ def publish_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -
 
 
 @router.get("/assignments")
-def list_assignments(club_id: int, session: SessionDep) -> list[AssignmentDetail]:
-    get_club_or_404(session, club_id)
+def list_assignments(club_id: int, session: SessionDep, club: CoordinatorClub) -> list[AssignmentDetail]:
     rows = session.exec(
         select(Assignment, Member, Shift, ShiftType)
         .where(
