@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from models import Health
 from routers import clubs, demo, members, outcomes, schedule
 
-app = FastAPI(title="Club Shift Scheduler", version="0.1.0")
+app = FastAPI(title="Club Shift Scheduler", version="0.2.0")
 
 app.include_router(clubs.router)
 app.include_router(members.router)
