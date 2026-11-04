@@ -1,0 +1,5 @@
+- Members read the ledger through their own token (privacy fix, v0.2.1)
+- Change history for reassignments and removals
+- Notify members when they are given or taken off a shift
+- Replace a leaked member or coordinator link
+- Onboarding flow for a new coordinator
