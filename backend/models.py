@@ -170,11 +170,27 @@ class Assignment(SQLModel, table=True):
     status: str = Field(default="assigned")  # assigned, done, no_show
 
 
+class AssignmentMove(SQLModel):
+    """Who an assignment should go to instead."""
+
+    member_id: int
+
+
 class AssignmentPublic(SQLModel):
     id: int
     shift_id: int
     member_id: int
     status: str
+
+
+class Candidate(SQLModel):
+    """A member who might take a shift over, with what the coordinator needs to choose."""
+
+    member_id: int
+    name: str
+    points: int
+    said_yes: bool
+    busy: bool  # already on this shift, or on another shift at the same time
 
 
 class PointsEntry(SQLModel, table=True):
