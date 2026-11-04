@@ -64,11 +64,17 @@ Open the links the seed printed:
 
 **Tests:** `uv run pytest` in `backend`, and `npm run test:unit -- --run` in `frontend`.
 
-## Known limitations (on 25 October 2026)
+## Known limitations (as on 4 November 2026)
 
-- Gaps left open when a schedule is published can't be refilled through the app yet.
-- Links work like passwords: anyone holding one can use it.
-- No notifications; links are shared by hand, for example in WhatsApp.
+- **Links are the login.** Anyone with a member or coordinator link has that access. There are no accounts and no way to replace a leaked link yet.
+- **Club data is readable by club id.** Member names and points can be read without a token. Fine for the demo, not for a real club; fixing this is the next patch.
+- **No notifications.** Members aren't told when they're given a shift or taken off one. The coordinator shares links and news through WhatsApp.
+- **One timezone.** Every club runs on Europe/Amsterdam time.
+- **The solver is greedy.** It is fair and explainable, not mathematically optimal. A constraint solver (CP-SAT) is on the list.
+- **No season reset.** Points keep adding up until a reset exists.
+- **No change history.** Reassigning or removing someone isn't logged.
+- **Tests run on SQLite, production on Postgres.** CI doesn't catch Postgres-only differences yet.
+- **Demo clubs are deleted after 24 hours,** and the free hosting tier can make the first load after a quiet spell slow.
 
 ## What's next
 
