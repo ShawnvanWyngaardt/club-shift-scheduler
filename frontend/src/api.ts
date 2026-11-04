@@ -95,6 +95,13 @@ export interface AssignmentDetail {
   ends_at: string
   weight: number
 }
+export interface Candidate {
+  member_id: number
+  name: string
+  points: number
+  said_yes: boolean
+  busy: boolean
+}
 
 export interface LedgerEntry {
   member_id: number
@@ -142,6 +149,21 @@ export const coordinatorApi = {
       method: 'POST',
       body: JSON.stringify({ name }),
       headers: asCoordinator(token),
+    }),
+  candidates: (token: string, assignmentId: number) =>
+    request<Candidate[]>(`/assignments/${assignmentId}/candidates`, {
+      headers: { 'X-Coordinator-Token': token },
+    }),
+  unassign: (token: string, assignmentId: number) =>
+    request<void>(`/assignments/${assignmentId}`, {
+      method: 'DELETE',
+      headers: { 'X-Coordinator-Token': token },
+    }),
+  reassign: (token: string, assignmentId: number, memberId: number) =>
+    request<AssignmentDetail>(`/assignments/${assignmentId}/member`, {
+      method: 'PUT',
+      headers: { 'X-Coordinator-Token': token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ member_id: memberId }),
     }),
   shiftTypes: (clubId: number) => request<ShiftTypeInfo[]>(`${club(clubId)}/shift-types`),
   addShiftType: (clubId: number, token: string, name: string, weight: number) =>

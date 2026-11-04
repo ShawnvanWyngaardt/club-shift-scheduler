@@ -8,6 +8,7 @@ import {
   type ShiftDetail,
 } from '@/api'
 import { formatDay, formatTimeRange, groupByDay } from '@/time'
+import AssignmentChange from '@/components/AssignmentChange.vue'
 
 const props = defineProps<{ clubId: string; token: string }>()
 const clubId = computed(() => Number(props.clubId))
@@ -77,9 +78,9 @@ const withPoints = (memberId: number, name: string) =>
 
 /** Who already holds each shift, from earlier publishes. */
 const holders = computed(() => {
-  const map = new Map<number, string[]>()
+  const map = new Map<number, AssignmentDetail[]>()
   for (const a of assignments.value) {
-    map.set(a.shift_id, [...(map.get(a.shift_id) ?? []), withPoints(a.member_id, a.member_name)])
+    map.set(a.shift_id, [...(map.get(a.shift_id) ?? []), a])
   }
   return map
 })
@@ -90,17 +91,17 @@ const upcoming = computed(() => {
   return shifts.value.filter((s) => new Date(s.starts_at).getTime() > now)
 })
 
-const openShifts = computed(() =>
-  upcoming.value
-    .map((s) => {
-      const held = holders.value.get(s.id) ?? []
-      return { ...s, held, missing: s.slots - held.length }
-    })
-    .filter((s) => s.missing > 0),
+const upcomingRows = computed(() =>
+  upcoming.value.map((s) => {
+    const held = holders.value.get(s.id) ?? []
+    return { ...s, held, missing: s.slots - held.length }
+  }),
 )
+const openShifts = computed(() => upcomingRows.value.filter((s) => s.missing > 0))
 const emptySlots = computed(() => openShifts.value.reduce((sum, s) => sum + s.missing, 0))
 const fullyStaffed = computed(() => upcoming.value.length - openShifts.value.length)
-const openDays = computed(() => groupByDay(openShifts.value))
+// Every upcoming shift, so a holder can be swapped out even when the shift is full.
+const upcomingDays = computed(() => groupByDay(upcomingRows.value))
 
 const previewRows = computed(() => {
   if (!proposal.value) return []
@@ -154,7 +155,7 @@ onMounted(load)
       <p v-if="published" class="ok" role="status">Published. Members can now see their shifts.</p>
       <p v-if="actionError" class="error" role="alert">{{ actionError }}</p>
 
-      <!-- Before generating: what still needs people -->
+      <!-- Before generating: every upcoming shift and who holds it -->
       <template v-if="!proposal">
         <p v-if="upcoming.length === 0" class="muted">
           No upcoming shifts.
@@ -162,27 +163,43 @@ onMounted(load)
             >Add some in Setup</RouterLink
           >.
         </p>
-        <p v-else-if="openShifts.length === 0" class="muted">
-          Every upcoming shift has enough people.
-        </p>
 
         <template v-else>
-          <div class="actions">
+          <p v-if="openShifts.length === 0" class="muted">
+            Every upcoming shift has enough people.
+          </p>
+          <div v-else class="actions">
             <button type="button" :disabled="busy" @click="generate">
               {{ phase === 'generating' ? 'Generating…' : 'Generate a schedule' }}
             </button>
             <p class="muted">Nothing is saved until you publish.</p>
           </div>
 
-          <section v-for="group in openDays" :key="group.day" class="day">
+          <section v-for="group in upcomingDays" :key="group.day" class="day">
             <h2>{{ group.day }}</h2>
-            <article v-for="shift in group.items" :key="shift.id" class="shift">
+            <article
+              v-for="shift in group.items"
+              :key="shift.id"
+              class="shift"
+              :class="{ 'has-gap': shift.missing > 0 }"
+            >
               <div class="shift-head">
                 <span class="shift-name">{{ shift.shift_type }}</span>
                 <span class="muted">{{ formatTimeRange(shift.starts_at, shift.ends_at) }}</span>
                 <span class="muted">{{ shift.held.length }} of {{ shift.slots }} filled</span>
               </div>
-              <p class="people">{{ shift.held.length ? shift.held.join(', ') : 'Nobody yet' }}</p>
+              <p v-if="shift.held.length === 0" class="people">Nobody yet</p>
+              <ul v-else class="holders">
+                <li v-for="holder in shift.held" :key="holder.id">
+                  {{ withPoints(holder.member_id, holder.member_name) }}
+                  <AssignmentChange
+                    v-if="holder.status === 'assigned'"
+                    :token="token"
+                    :assignment="holder"
+                    @changed="load"
+                  />
+                </li>
+              </ul>
             </article>
           </section>
         </template>
@@ -227,7 +244,9 @@ onMounted(load)
               </span>
             </div>
             <p v-if="row.held.length || row.added.length" class="people">
-              <span v-for="name in row.held" :key="`held-${name}`" class="person">{{ name }}</span>
+              <span v-for="holder in row.held" :key="`held-${holder.id}`" class="person">
+                {{ withPoints(holder.member_id, holder.member_name) }}
+              </span>
               <span v-for="name in row.added" :key="`new-${name}`" class="person">
                 {{ name }} <span class="tag-new">new</span>
               </span>
@@ -299,6 +318,14 @@ h2 {
   flex-wrap: wrap;
   gap: var(--space-1, 4px) var(--space-3);
   margin: var(--space-2) 0 0;
+}
+.holders {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+.holders li + li {
+  margin-top: var(--space-2);
 }
 .tag-new {
   font-size: 0.75rem;
