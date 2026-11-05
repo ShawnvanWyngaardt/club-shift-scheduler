@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from models import Health
 from routers import clubs, demo, members, outcomes, schedule
 
-app = FastAPI(title="Club Shift Scheduler", version="0.2.0")
+app = FastAPI(title="Club Shift Scheduler", version="0.2.1")
 
 app.include_router(clubs.router)
 app.include_router(members.router)
@@ -29,7 +29,8 @@ def health() -> Health:
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
 if FRONTEND_DIST.exists():
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST /
+              "assets"), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_frontend(full_path: str) -> FileResponse:
