@@ -185,3 +185,26 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Learned:** the difference between a table model and a response model. `Assignment` stores ids and a status; `MyAssignment` is the shape the member's screen needs, built from the assignment, its shift and its shift type in one query.
 - **Learned:** a view is just a component. The router decides which URL shows it, but a layout can render it too, which keeps the URL intact.
 - **Noted:** the generated UI works, but it isn't how I build frontends. That is the v0.3.0 redesign, after the flows are complete, so I don't restyle screens that are still changing.
+
+## Wed 4 Nov: v0.2.0 out, and a privacy gap closed
+
+- **Built:** session 12, the coordinator override. Remove someone from an upcoming shift, or give it to someone else from a list the server prepares: people who said yes first, fewest points on top, anyone on an overlapping shift greyed out. The inline confirm replaced `window.confirm` on these actions.
+- **Built:** session 11, a Points tab for the coordinator, the version bump to 0.2.0, README updates, release notes, and short READMEs for the `backend` and `frontend` folders in place of the scaffold text.
+- **Released:** `v0.2.0` tagged and published on GitHub.
+
+- **Decision:** removing someone also clears their "I could do this" for that shift. Without it, remove followed by refill hands the shift straight back to the same person. Caught in planning, proven by a test.
+- **Decision:** the server decides who is busy, for both the dropdown and the reassign check, so the screen and the rule can't disagree. The server still checks again on reassign, because a dropdown can be out of date.
+- **Decision:** assignments with an outcome, or on shifts that have started, are locked. A planned shift can change; a done or no-show shift is history, and the append-only ledger depends on that.
+- **Decision:** no ledger entry for a removal or reassignment. Points only move on outcomes, so there is nothing to record.
+- **Decision:** the same points, sorted for the reader. The coordinator sees lowest first, to know who is next in line; members see them alphabetically, so the list doesn't become a contest.
+- **Decision:** members see everyone's balance but only their own history. Before the fix, any member could read everyone else's no-shows.
+- **Decision:** the privacy fix shipped as one PR. Backend and frontend deploy from the same commit on Render, so the breaking API change and the screens that use it had to land together.
+
+- **Found:** anyone who guessed a club id could read that club's member names, assignments and points. Ids count up from 1, so "guessed" means "tried 1, 2, 3". Harmless with demo data, not with a real club. Listed it honestly as a known limitation in the v0.2.0 release and fixed it as the first patch.
+- **Went wrong:** checked a new tab on port 8000 and couldn't find it. Port 8000 serves the last `npm run build`; the dev server on 5173 shows the current code. Now I use 5173 while building, and a fresh build on 8000 as a production check before merging.
+- **Went wrong:** while adding coordinator headers to the tests, `headers=headers` slipped inside a URL f-string. Ruff caught it as invalid syntax.
+- **Learned:** Ruff's pyupgrade rules prefer `datetime.UTC` over `timezone.utc`. Same object, newer name.
+- **Learned:** after locking endpoints down, the existing tests failing was the proof the fix worked. If none had broken, the tests never checked access at all. Fixed them by sending the right headers, not by loosening the endpoints.
+- **Learned:** a tag is a promise about one commit, so the version bump goes in before tagging.
+
+- **Next:** before and after screenshots of every screen, then updated user-flow diagrams, then the v0.3.0 redesign in my own frontend style.
