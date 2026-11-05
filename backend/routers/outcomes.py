@@ -54,8 +54,7 @@ def require_changeable(assignment: Assignment, shift: Shift) -> None:
             detail=f"Already marked as {assignment.status}, so it can't be changed",
         )
     if shift.starts_at <= datetime.now(UTC):
-        raise HTTPException(
-            status_code=409, detail="This shift has already started")
+        raise HTTPException(status_code=409, detail="This shift has already started")
 
 
 def busy_member_ids(session: Session, shift: Shift) -> set[int]:
@@ -74,8 +73,7 @@ def busy_member_ids(session: Session, shift: Shift) -> set[int]:
 
 def clear_answer(session: Session, member_id: int, shift_id: int) -> None:
     """Untick a member's 'I could do this' for one shift, if they had ticked it."""
-    answer = session.get(
-        Availability, {"member_id": member_id, "shift_id": shift_id})
+    answer = session.get(Availability, {"member_id": member_id, "shift_id": shift_id})
     if answer is not None:
         session.delete(answer)
 
@@ -88,11 +86,9 @@ def record_outcome(
     x_coordinator_token: CoordinatorToken,
 ) -> Assignment:
     """Mark an assignment done or no-show, and write the matching ledger entry."""
-    assignment, shift, shift_type, _ = load_assignment(
-        session, assignment_id, x_coordinator_token)
+    assignment, shift, shift_type, _ = load_assignment(session, assignment_id, x_coordinator_token)
     if assignment.status != "assigned":
-        raise HTTPException(
-            status_code=409, detail=f"Already marked as {assignment.status}")
+        raise HTTPException(status_code=409, detail=f"Already marked as {assignment.status}")
 
     change = shift_type.weight if data.status == "done" else -shift_type.weight
     assignment.status = data.status
@@ -114,8 +110,7 @@ def unassign(
     assignment_id: int, session: SessionDep, x_coordinator_token: CoordinatorToken
 ) -> None:
     """Take a member off an upcoming shift. The slot is open again for the next refill."""
-    assignment, shift, _, _ = load_assignment(
-        session, assignment_id, x_coordinator_token)
+    assignment, shift, _, _ = load_assignment(session, assignment_id, x_coordinator_token)
     require_changeable(assignment, shift)
     # Without this, the next refill would pick the same member straight back.
     clear_answer(session, assignment.member_id, shift.id)
@@ -128,13 +123,10 @@ def list_candidates(
     assignment_id: int, session: SessionDep, x_coordinator_token: CoordinatorToken
 ) -> list[Candidate]:
     """Who could take this shift instead: free members who said yes first, fewest points on top."""
-    assignment, shift, _, club = load_assignment(
-        session, assignment_id, x_coordinator_token)
-    members = session.exec(select(Member).where(
-        Member.club_id == club.id)).all()
+    assignment, shift, _, club = load_assignment(session, assignment_id, x_coordinator_token)
+    members = session.exec(select(Member).where(Member.club_id == club.id)).all()
     said_yes = set(
-        session.exec(select(Availability.member_id).where(
-            Availability.shift_id == shift.id)).all()
+        session.exec(select(Availability.member_id).where(Availability.shift_id == shift.id)).all()
     )
     busy = busy_member_ids(session, shift)
     points = points_by_member(club.id, session)
@@ -161,14 +153,12 @@ def reassign(
     x_coordinator_token: CoordinatorToken,
 ) -> Assignment:
     """Give an upcoming shift to another member of the same club."""
-    assignment, shift, _, club = load_assignment(
-        session, assignment_id, x_coordinator_token)
+    assignment, shift, _, club = load_assignment(session, assignment_id, x_coordinator_token)
     require_changeable(assignment, shift)
 
     member = session.get(Member, data.member_id)
     if member is None or member.club_id != club.id:
-        raise HTTPException(
-            status_code=404, detail="Member not found in this club")
+        raise HTTPException(status_code=404, detail="Member not found in this club")
     if member.id in busy_member_ids(session, shift):
         raise HTTPException(
             status_code=409, detail=f"{member.name} is already on a shift at that time"

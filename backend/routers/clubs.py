@@ -39,8 +39,7 @@ def find_in_club[T: (Member, Shift, ShiftType)](
     """Fetch a member, shift or shift type, but only if it belongs to this club."""
     item = session.get(model, item_id)
     if item is None or item.club_id != club_id:
-        raise HTTPException(
-            status_code=404, detail=f"{label} not found in this club")
+        raise HTTPException(status_code=404, detail=f"{label} not found in this club")
     return item
 
 
@@ -75,8 +74,7 @@ def list_members(club_id: int, session: SessionDep, club: CoordinatorClub) -> li
 @router.get("/{club_id}/members/links", response_model=list[MemberWithToken])
 def list_member_links(club_id: int, session: SessionDep, club: CoordinatorClub) -> list[Member]:
     """Every member with their personal link token. Coordinator only: tokens work like passwords."""
-    statement = select(Member).where(
-        Member.club_id == club_id).order_by(Member.name)
+    statement = select(Member).where(Member.club_id == club_id).order_by(Member.name)
     return list(session.exec(statement))
 
 
@@ -97,8 +95,7 @@ def list_shift_types(club_id: int, session: SessionDep) -> list[ShiftType]:
 def add_shift(club_id: int, data: ShiftCreate, session: SessionDep, club: CoordinatorClub) -> Shift:
     shift_type = session.get(ShiftType, data.shift_type_id)
     if shift_type is None or shift_type.club_id != club_id:
-        raise HTTPException(
-            status_code=404, detail="Shift type not found in this club")
+        raise HTTPException(status_code=404, detail="Shift type not found in this club")
     return save(session, Shift.model_validate(data, update={"club_id": club_id}))
 
 
@@ -153,8 +150,7 @@ def add_weekly_shifts(
 def remove_member(club_id: int, member_id: int, session: SessionDep, club: CoordinatorClub) -> None:
     member = find_in_club(session, Member, member_id, club_id, "Member")
     has_history = (
-        session.exec(select(Assignment.id).where(
-            Assignment.member_id == member_id)).first()
+        session.exec(select(Assignment.id).where(Assignment.member_id == member_id)).first()
         or session.exec(select(PointsEntry.id).where(PointsEntry.member_id == member_id)).first()
     )
     if has_history:
@@ -173,8 +169,7 @@ def remove_member(club_id: int, member_id: int, session: SessionDep, club: Coord
 def remove_shift(club_id: int, shift_id: int, session: SessionDep, club: CoordinatorClub) -> None:
     shift = find_in_club(session, Shift, shift_id, club_id, "Shift")
     if session.exec(select(Assignment.id).where(Assignment.shift_id == shift_id)).first():
-        raise HTTPException(
-            status_code=409, detail="This shift is already scheduled")
+        raise HTTPException(status_code=409, detail="This shift is already scheduled")
     for row in session.exec(select(Availability).where(Availability.shift_id == shift_id)):
         session.delete(row)
     session.flush()
@@ -186,10 +181,8 @@ def remove_shift(club_id: int, shift_id: int, session: SessionDep, club: Coordin
 def remove_shift_type(
     club_id: int, shift_type_id: int, session: SessionDep, club: CoordinatorClub
 ) -> None:
-    shift_type = find_in_club(
-        session, ShiftType, shift_type_id, club_id, "Shift type")
+    shift_type = find_in_club(session, ShiftType, shift_type_id, club_id, "Shift type")
     if session.exec(select(Shift.id).where(Shift.shift_type_id == shift_type_id)).first():
-        raise HTTPException(
-            status_code=409, detail="Remove this type's shifts first")
+        raise HTTPException(status_code=409, detail="Remove this type's shifts first")
     session.delete(shift_type)
     session.commit()

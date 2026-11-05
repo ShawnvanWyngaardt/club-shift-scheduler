@@ -60,8 +60,7 @@ def published_shift(client):
         headers=headers,
     ).json()
     token = member["access_token"]
-    client.put(f"/api/me/{token}/availability",
-               json={"shift_ids": [shift["id"]]})
+    client.put(f"/api/me/{token}/availability", json={"shift_ids": [shift["id"]]})
     client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
     return club_id, headers, token
 
@@ -76,14 +75,12 @@ def test_coordinator_actions_need_the_right_token(client):
         ).status_code
         == 403
     )
-    assert client.post(url, json={"name": "Anna"},
-                       headers=headers).status_code == 201
+    assert client.post(url, json={"name": "Anna"}, headers=headers).status_code == 201
 
 
 def test_coordinator_link_check(client):
     club_id, headers = make_club(client)
-    assert client.get(
-        f"/api/clubs/{club_id}/coordinator", headers=headers).status_code == 200
+    assert client.get(f"/api/clubs/{club_id}/coordinator", headers=headers).status_code == 200
     assert (
         client.get(
             f"/api/clubs/{club_id}/coordinator", headers={"X-Coordinator-Token": "x"}
@@ -105,8 +102,7 @@ def test_member_sees_their_assignment(client):
 
 def test_member_cannot_untick_an_assigned_shift(client):
     _, _, token = published_shift(client)
-    response = client.put(
-        f"/api/me/{token}/availability", json={"shift_ids": []})
+    response = client.put(f"/api/me/{token}/availability", json={"shift_ids": []})
     assert response.status_code == 409
 
 
@@ -116,10 +112,8 @@ def test_done_adds_points_and_no_double_counting(client):
     assert assignment["member_name"] == "Anna" and assignment["shift_type"] == "Bar"
 
     url = f"/api/assignments/{assignment['id']}"
-    assert client.patch(url, json={"status": "done"},
-                        headers=headers).status_code == 200
-    assert client.patch(url, json={"status": "done"},
-                        headers=headers).status_code == 409
+    assert client.patch(url, json={"status": "done"}, headers=headers).status_code == 200
+    assert client.patch(url, json={"status": "done"}, headers=headers).status_code == 409
     assert client.get(f"/api/me/{token}").json()["balance"] == 3
 
 
@@ -162,13 +156,11 @@ def test_times_come_back_in_utc(client):
 
 def test_only_the_coordinator_can_list_member_links(client):
     club_id, headers = make_club(client)
-    client.post(f"/api/clubs/{club_id}/members",
-                json={"name": "Anna"}, headers=headers)
+    client.post(f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers)
     url = f"/api/clubs/{club_id}/members/links"
 
     assert client.get(url).status_code == 422
-    assert client.get(
-        url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
+    assert client.get(url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
     links = client.get(url, headers=headers).json()
     assert links[0]["name"] == "Anna" and links[0]["access_token"]
 
@@ -186,17 +178,14 @@ def test_members_see_all_balances_but_only_their_own_history(client):
     club_id, headers, token = published_shift(client)
     sam = add_member(client, club_id, headers, "Sam")
     assignment = first_assignment(client, club_id, headers)
-    client.patch(
-        f"/api/assignments/{assignment['id']}", json={"status": "done"}, headers=headers)
+    client.patch(f"/api/assignments/{assignment['id']}", json={"status": "done"}, headers=headers)
 
     mine = client.get(f"/api/me/{token}/ledger").json()
     assert "Sam" in {b["name"] for b in mine["balances"]}
     assert mine["entries"]
-    assert all(e["member_id"] == assignment["member_id"]
-               for e in mine["entries"])
+    assert all(e["member_id"] == assignment["member_id"] for e in mine["entries"])
 
-    assert client.get(
-        f"/api/me/{sam['access_token']}/ledger").json()["entries"] == []
+    assert client.get(f"/api/me/{sam['access_token']}/ledger").json()["entries"] == []
     assert client.get("/api/me/nonsense/ledger").status_code == 404
 
 
@@ -219,21 +208,17 @@ def test_weekly_shifts_keep_local_time_across_the_clock_change(client):
     assert response.status_code == 201
     amsterdam = ZoneInfo("Europe/Amsterdam")
     local_starts = [
-        datetime.fromisoformat(s["starts_at"]).astimezone(
-            amsterdam).strftime("%Y-%m-%d %H:%M")
+        datetime.fromisoformat(s["starts_at"]).astimezone(amsterdam).strftime("%Y-%m-%d %H:%M")
         for s in response.json()
     ]
-    assert local_starts == ["2026-10-17 07:00",
-                            "2026-10-24 07:00", "2026-10-31 07:00"]
+    assert local_starts == ["2026-10-17 07:00", "2026-10-24 07:00", "2026-10-31 07:00"]
 
 
 def test_member_with_history_stays(client):
     club_id, headers, _ = published_shift(client)
-    anna = client.get(
-        f"/api/clubs/{club_id}/members/links", headers=headers).json()[0]
+    anna = client.get(f"/api/clubs/{club_id}/members/links", headers=headers).json()[0]
     assert (
-        client.delete(
-            f"/api/clubs/{club_id}/members/{anna['id']}", headers=headers).status_code
+        client.delete(f"/api/clubs/{club_id}/members/{anna['id']}", headers=headers).status_code
         == 409
     )
 
@@ -241,12 +226,12 @@ def test_member_with_history_stays(client):
         f"/api/clubs/{club_id}/members", json={"name": "Bram"}, headers=headers
     ).json()
     assert (
-        client.delete(
-            f"/api/clubs/{club_id}/members/{bram['id']}", headers=headers).status_code
+        client.delete(f"/api/clubs/{club_id}/members/{bram['id']}", headers=headers).status_code
         == 204
     )
-    assert [m["name"] for m in client.get(
-        f"/api/clubs/{club_id}/members", headers=headers).json()] == ["Anna"]
+    assert [
+        m["name"] for m in client.get(f"/api/clubs/{club_id}/members", headers=headers).json()
+    ] == ["Anna"]
 
 
 def test_only_unscheduled_shifts_can_be_deleted(client):
@@ -268,8 +253,7 @@ def test_only_unscheduled_shifts_can_be_deleted(client):
         headers=headers,
     ).json()
     assert (
-        client.delete(
-            f"/api/clubs/{club_id}/shifts/{extra['id']}", headers=headers).status_code
+        client.delete(f"/api/clubs/{club_id}/shifts/{extra['id']}", headers=headers).status_code
         == 204
     )
     assert len(client.get(f"/api/clubs/{club_id}/shifts").json()) == 1
@@ -318,17 +302,13 @@ def test_partly_filled_shift_gets_refilled(client):
         headers=headers,
     ).json()
 
-    client.put(f"/api/me/{anna['access_token']}/availability",
-               json={"shift_ids": [shift["id"]]})
-    first = client.post(
-        f"/api/clubs/{club_id}/schedule/publish", headers=headers).json()
+    client.put(f"/api/me/{anna['access_token']}/availability", json={"shift_ids": [shift["id"]]})
+    first = client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers).json()
     assert [a["member_name"] for a in first["assignments"]] == ["Anna"]
     assert first["unfilled"] == [{"shift_id": shift["id"], "missing": 1}]
 
-    client.put(f"/api/me/{bram['access_token']}/availability",
-               json={"shift_ids": [shift["id"]]})
-    second = client.post(
-        f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
+    client.put(f"/api/me/{bram['access_token']}/availability", json={"shift_ids": [shift["id"]]})
+    second = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
     assert [a["member_name"] for a in second["assignments"]] == ["Bram"]
     assert second["unfilled"] == []
 
@@ -364,16 +344,13 @@ def test_past_shifts_are_hidden_and_never_scheduled(client):
     ).json()
 
     token = member["access_token"]
-    assert [s["id"] for s in client.get(
-        f"/api/me/{token}/shifts").json()] == [upcoming["id"]]
+    assert [s["id"] for s in client.get(f"/api/me/{token}/shifts").json()] == [upcoming["id"]]
     assert (
-        client.put(f"/api/me/{token}/availability",
-                   json={"shift_ids": [past["id"]]}).status_code
+        client.put(f"/api/me/{token}/availability", json={"shift_ids": [past["id"]]}).status_code
         == 422
     )
 
-    proposal = client.post(
-        f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
+    proposal = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
     assert past["id"] not in [u["shift_id"] for u in proposal["unfilled"]]
 
 
@@ -381,17 +358,13 @@ def test_member_sees_their_assignments_and_outcomes(client):
     club_id, headers, token = published_shift(client)
 
     mine = client.get(f"/api/me/{token}/assignments").json()
-    assert [(a["shift_type"], a["status"])
-            for a in mine] == [("Bar", "assigned")]
+    assert [(a["shift_type"], a["status"]) for a in mine] == [("Bar", "assigned")]
 
-    client.patch(
-        f"/api/assignments/{mine[0]['id']}", json={"status": "done"}, headers=headers)
-    assert client.get(
-        f"/api/me/{token}/assignments").json()[0]["status"] == "done"
+    client.patch(f"/api/assignments/{mine[0]['id']}", json={"status": "done"}, headers=headers)
+    assert client.get(f"/api/me/{token}/assignments").json()[0]["status"] == "done"
 
     me = client.get(f"/api/me/{token}").json()
-    links = client.get(
-        f"/api/clubs/{club_id}/members/links", headers=headers).json()
+    links = client.get(f"/api/clubs/{club_id}/members/links", headers=headers).json()
     assert me["member_id"] == links[0]["id"]
     assert me["balance"] == 3
 
@@ -409,14 +382,12 @@ def test_coordinator_can_take_someone_off_a_shift(client):
     assignment = first_assignment(client, club_id, headers)
     url = f"/api/assignments/{assignment['id']}"
 
-    assert client.delete(
-        url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
+    assert client.delete(url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
     assert client.delete(url, headers=headers).status_code == 204
 
     assert client.get(f"/api/me/{token}/assignments").json() == []
     shifts = client.get(f"/api/me/{token}/shifts").json()
-    assert not any(s["available"]
-                   for s in shifts if s["id"] == assignment["shift_id"])
+    assert not any(s["available"] for s in shifts if s["id"] == assignment["shift_id"])
 
     # A refill doesn't hand the shift straight back to the same member.
     client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
@@ -464,14 +435,12 @@ def test_busy_members_and_recorded_outcomes_are_protected(client):
         },
         headers=headers,
     ).json()
-    client.put(f"/api/me/{sam['access_token']}/availability",
-               json={"shift_ids": [same_time["id"]]})
+    client.put(f"/api/me/{sam['access_token']}/availability", json={"shift_ids": [same_time["id"]]})
     client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
 
     candidates = client.get(f"{url}/candidates", headers=headers).json()
     assert next(c for c in candidates if c["member_id"] == sam["id"])["busy"]
-    moved = client.put(
-        f"{url}/member", json={"member_id": sam["id"]}, headers=headers)
+    moved = client.put(f"{url}/member", json={"member_id": sam["id"]}, headers=headers)
     assert moved.status_code == 409
 
     # Once an outcome is recorded, the assignment is history.

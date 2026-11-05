@@ -26,8 +26,7 @@ router = APIRouter(prefix="/api/me", tags=["member link"])
 
 def upcoming_shift_ids(club_id: int, session: Session) -> set[int]:
     now = datetime.now(UTC)
-    statement = select(Shift.id).where(
-        Shift.club_id == club_id, col(Shift.starts_at) > now)
+    statement = select(Shift.id).where(Shift.club_id == club_id, col(Shift.starts_at) > now)
     return set(session.exec(statement).all())
 
 
@@ -43,12 +42,10 @@ def my_shifts(member: Member, session: Session) -> list[MyShift]:
         .order_by(Shift.starts_at)
     ).all()
     chosen = set(
-        session.exec(select(Availability.shift_id).where(
-            Availability.member_id == member.id)).all()
+        session.exec(select(Availability.shift_id).where(Availability.member_id == member.id)).all()
     )
     assigned = set(
-        session.exec(select(Assignment.shift_id).where(
-            Assignment.member_id == member.id)).all()
+        session.exec(select(Assignment.shift_id).where(Assignment.member_id == member.id)).all()
     )
 
     return [
@@ -102,8 +99,7 @@ def update_my_availability(
     assigned = set(
         session.exec(
             select(Assignment.shift_id).where(
-                Assignment.member_id == member.id, col(
-                    Assignment.shift_id).in_(upcoming)
+                Assignment.member_id == member.id, col(Assignment.shift_id).in_(upcoming)
             )
         ).all()
     )
@@ -117,8 +113,7 @@ def update_my_availability(
     # Replace the answers for upcoming shifts only; answers for past shifts stay as a record.
     old_answers = session.exec(
         select(Availability).where(
-            Availability.member_id == member.id, col(
-                Availability.shift_id).in_(upcoming)
+            Availability.member_id == member.id, col(Availability.shift_id).in_(upcoming)
         )
     ).all()
     for old in old_answers:

@@ -30,7 +30,9 @@ def publish_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -
 
 
 @router.get("/assignments")
-def list_assignments(club_id: int, session: SessionDep, club: CoordinatorClub) -> list[AssignmentDetail]:
+def list_assignments(
+    club_id: int, session: SessionDep, club: CoordinatorClub
+) -> list[AssignmentDetail]:
     rows = session.exec(
         select(Assignment, Member, Shift, ShiftType)
         .where(

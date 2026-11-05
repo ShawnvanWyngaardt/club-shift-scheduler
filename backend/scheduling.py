@@ -37,8 +37,7 @@ def build_problem(club_id: int, session: Session) -> Problem:
     """Translate database rows into the solver's plain input.
     Only upcoming shifts with empty slots are scheduled; existing assignments are kept."""
     now = datetime.now(UTC)
-    members = session.exec(select(Member).where(
-        Member.club_id == club_id)).all()
+    members = session.exec(select(Member).where(Member.club_id == club_id)).all()
     points = points_by_member(club_id, session)
 
     upcoming = session.exec(
@@ -84,11 +83,9 @@ def build_problem(club_id: int, session: Session) -> Problem:
     ).all()
 
     return Problem(
-        members=[MemberIn(id=m.id, name=m.name, points=points.get(m.id, 0))
-                 for m in members],
+        members=[MemberIn(id=m.id, name=m.name, points=points.get(m.id, 0)) for m in members],
         shifts=open_shifts,
-        available={(member_id, shift_id)
-                   for member_id, shift_id in available_rows},
+        available={(member_id, shift_id) for member_id, shift_id in available_rows},
         already_assigned=already_assigned,
     )
 
@@ -98,8 +95,7 @@ def to_proposal(problem: Problem, result: Result) -> Proposal:
     names = {m.id: m.name for m in problem.members}
     return Proposal(
         assignments=[
-            ProposedAssignment(
-                shift_id=shift_id, member_id=member_id, member_name=names[member_id])
+            ProposedAssignment(shift_id=shift_id, member_id=member_id, member_name=names[member_id])
             for shift_id, member_id in result.assignments
         ],
         unfilled=[
@@ -126,8 +122,7 @@ def build_ledger(club_id: int, session: Session, member_id: int | None = None) -
     )
     if member_id is not None:
         query = query.where(PointsEntry.member_id == member_id)
-    entries = session.exec(query.order_by(
-        col(PointsEntry.created_at).desc())).all()
+    entries = session.exec(query.order_by(col(PointsEntry.created_at).desc())).all()
     return Ledger(
         balances=[
             Balance(member_id=m.id, name=m.name, balance=points.get(m.id, 0)) for m in members
