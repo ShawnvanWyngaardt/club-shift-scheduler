@@ -54,7 +54,7 @@ export const api = {
   me: (token: string) => request<MemberProfile>(member(token)),
   myShifts: (token: string) => request<MyShift[]>(`${member(token)}/shifts`),
   myAssignments: (token: string) => request<MyAssignment[]>(`${member(token)}/assignments`),
-  ledger: (clubId: number) => request<Ledger>(`/clubs/${clubId}/ledger`),
+  ledger: (token: string) => request<Ledger>(`${member(token)}/ledger`),
   saveAvailability: (token: string, shiftIds: number[]) =>
     request<MyShift[]>(`${member(token)}/availability`, {
       method: 'PUT',
@@ -122,8 +122,10 @@ export const coordinatorApi = {
   checkLink: (clubId: number, token: string) =>
     request<ClubPublic>(`${club(clubId)}/coordinator`, { headers: asCoordinator(token) }),
   shifts: (clubId: number) => request<ShiftDetail[]>(`${club(clubId)}/shifts`),
-  assignments: (clubId: number) => request<AssignmentDetail[]>(`${club(clubId)}/assignments`),
-  ledger: (clubId: number) => request<Ledger>(`${club(clubId)}/ledger`),
+  assignments: (clubId: number, token: string) =>
+    request<AssignmentDetail[]>(`${club(clubId)}/assignments`, { headers: asCoordinator(token) }),
+  ledger: (clubId: number, token: string) =>
+    request<Ledger>(`${club(clubId)}/ledger`, { headers: asCoordinator(token) }),
   generate: (clubId: number, token: string) =>
     request<Proposal>(`${club(clubId)}/schedule/generate`, {
       method: 'POST',

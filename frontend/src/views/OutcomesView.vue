@@ -13,7 +13,7 @@ const rowError = ref<{ id: number; text: string } | null>(null)
 async function load() {
   state.value = 'loading'
   try {
-    assignments.value = await coordinatorApi.assignments(Number(props.clubId))
+    assignments.value = await coordinatorApi.assignments(Number(props.clubId), props.token)
     state.value = 'ready'
   } catch {
     state.value = 'error'

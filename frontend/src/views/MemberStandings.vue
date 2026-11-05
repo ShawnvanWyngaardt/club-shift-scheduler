@@ -11,7 +11,7 @@ async function load() {
   if (!props.profile) return
   state.value = 'loading'
   try {
-    ledger.value = await api.ledger(props.profile.club_id)
+    ledger.value = await api.ledger(props.token)
     state.value = 'ready'
   } catch {
     state.value = 'error'

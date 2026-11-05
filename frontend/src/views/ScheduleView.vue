@@ -32,8 +32,8 @@ async function load() {
   try {
     const [allShifts, allAssignments, ledger] = await Promise.all([
       coordinatorApi.shifts(clubId.value),
-      coordinatorApi.assignments(clubId.value),
-      coordinatorApi.ledger(clubId.value),
+      coordinatorApi.assignments(clubId.value, props.token),
+      coordinatorApi.ledger(clubId.value, props.token),
     ])
     shifts.value = allShifts
     assignments.value = allAssignments
