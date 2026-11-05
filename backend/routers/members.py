@@ -11,6 +11,7 @@ from models import (
     Availability,
     AvailabilityUpdate,
     Club,
+    Ledger,
     Member,
     MemberProfile,
     MyAssignment,
@@ -18,7 +19,7 @@ from models import (
     Shift,
     ShiftType,
 )
-from scheduling import points_by_member
+from scheduling import build_ledger, points_by_member
 
 router = APIRouter(prefix="/api/me", tags=["member link"])
 
@@ -149,3 +150,10 @@ def read_my_assignments(token: str, session: SessionDep) -> list[MyAssignment]:
         )
         for assignment, shift, shift_type in rows
     ]
+
+
+@router.get("/{token}/ledger")
+def read_my_ledger(token: str, session: SessionDep) -> Ledger:
+    """Everyone's balance in the member's club, and only this member's own history."""
+    member = get_member_by_token(token, session)
+    return build_ledger(member.club_id, session, member_id=member.id)

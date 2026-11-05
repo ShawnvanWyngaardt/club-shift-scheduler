@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { api, type Ledger } from '@/api'
+import { coordinatorApi, type Ledger } from '@/api'
 import { formatDay } from '@/time'
 
 const props = defineProps<{ clubId: string; token: string }>()
@@ -12,7 +12,7 @@ const memberFilter = ref<number | 'all'>('all')
 async function load() {
   state.value = 'loading'
   try {
-    ledger.value = await api.ledger(Number(props.clubId))
+    ledger.value = await coordinatorApi.ledger(Number(props.clubId), props.token)
     state.value = 'ready'
   } catch {
     state.value = 'error'

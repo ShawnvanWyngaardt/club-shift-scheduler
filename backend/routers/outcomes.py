@@ -6,24 +6,22 @@ from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException
 from sqlmodel import Session, col, select
 
-from dependencies import SessionDep, check_coordinator, get_club_or_404
+from dependencies import CoordinatorClub, SessionDep, check_coordinator
 from models import (
     Assignment,
     AssignmentMove,
     AssignmentPublic,
     AssignmentUpdate,
     Availability,
-    Balance,
     Candidate,
     Club,
     Ledger,
     Member,
     PointsEntry,
-    PointsEntryPublic,
     Shift,
     ShiftType,
 )
-from scheduling import points_by_member
+from scheduling import build_ledger, points_by_member
 
 router = APIRouter(prefix="/api", tags=["outcomes"])
 
@@ -175,22 +173,6 @@ def reassign(
 
 
 @router.get("/clubs/{club_id}/ledger")
-def read_ledger(club_id: int, session: SessionDep) -> Ledger:
-    """Every member's balance, plus the history behind it, newest first."""
-    get_club_or_404(session, club_id)
-    points = points_by_member(club_id, session)
-    members = session.exec(
-        select(Member).where(Member.club_id == club_id).order_by(Member.name)
-    ).all()
-    entries = session.exec(
-        select(PointsEntry)
-        .join(Member, PointsEntry.member_id == Member.id)
-        .where(Member.club_id == club_id)
-        .order_by(col(PointsEntry.created_at).desc())
-    ).all()
-    return Ledger(
-        balances=[
-            Balance(member_id=m.id, name=m.name, balance=points.get(m.id, 0)) for m in members
-        ],
-        entries=[PointsEntryPublic.model_validate(e) for e in entries],
-    )
+def read_ledger(club_id: int, session: SessionDep, club: CoordinatorClub) -> Ledger:
+    """Every member's balance and the club's full history. Coordinator only."""
+    return build_ledger(club_id, session)

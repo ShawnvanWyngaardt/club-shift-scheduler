@@ -67,7 +67,6 @@ Open the links the seed printed:
 ## Known limitations (as on 4 November 2026)
 
 - **Links are the login.** Anyone with a member or coordinator link has that access. There are no accounts and no way to replace a leaked link yet.
-- **Club data is readable by club id.** Member names and points can be read without a token. Fine for the demo, not for a real club; fixing this is the next patch.
 - **No notifications.** Members aren't told when they're given a shift or taken off one. The coordinator shares links and news through WhatsApp.
 - **One timezone.** Every club runs on Europe/Amsterdam time.
 - **The solver is greedy.** It is fair and explainable, not mathematically optimal. A constraint solver (CP-SAT) is on the list.

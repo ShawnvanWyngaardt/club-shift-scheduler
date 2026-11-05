@@ -67,8 +67,7 @@ def add_member(
 
 
 @router.get("/{club_id}/members", response_model=list[MemberPublic])
-def list_members(club_id: int, session: SessionDep) -> list[Member]:
-    get_club_or_404(session, club_id)
+def list_members(club_id: int, session: SessionDep, club: CoordinatorClub) -> list[Member]:
     return list(session.exec(select(Member).where(Member.club_id == club_id)))
 
 

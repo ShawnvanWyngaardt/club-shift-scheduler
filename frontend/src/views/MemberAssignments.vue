@@ -14,12 +14,10 @@ async function load() {
   try {
     const [mine, ledger] = await Promise.all([
       api.myAssignments(props.token),
-      props.profile ? api.ledger(props.profile.club_id) : Promise.resolve(null),
+      api.ledger(props.token),
     ])
     assignments.value = mine
-    history.value = ledger
-      ? ledger.entries.filter((entry) => entry.member_id === props.profile?.member_id)
-      : []
+    history.value = ledger.entries
     state.value = 'ready'
   } catch {
     state.value = 'error'

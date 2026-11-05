@@ -108,7 +108,7 @@ def test_member_cannot_untick_an_assigned_shift(client):
 
 def test_done_adds_points_and_no_double_counting(client):
     club_id, headers, token = published_shift(client)
-    assignment = client.get(f"/api/clubs/{club_id}/assignments").json()[0]
+    assignment = first_assignment(client, club_id, headers)
     assert assignment["member_name"] == "Anna" and assignment["shift_type"] == "Bar"
 
     url = f"/api/assignments/{assignment['id']}"
@@ -165,10 +165,28 @@ def test_only_the_coordinator_can_list_member_links(client):
     assert links[0]["name"] == "Anna" and links[0]["access_token"]
 
 
-def test_public_member_list_never_shows_tokens(client):
-    club_id, headers = make_club(client)
-    client.post(f"/api/clubs/{club_id}/members", json={"name": "Anna"}, headers=headers)
-    assert "access_token" not in client.get(f"/api/clubs/{club_id}/members").json()[0]
+def test_club_data_needs_the_coordinator_link(client):
+    club_id, headers, _ = published_shift(client)
+    wrong = {"X-Coordinator-Token": "wrong"}
+    for path in ("members", "assignments", "ledger"):
+        url = f"/api/clubs/{club_id}/{path}"
+        assert client.get(url, headers=wrong).status_code == 403
+        assert client.get(url, headers=headers).status_code == 200
+
+
+def test_members_see_all_balances_but_only_their_own_history(client):
+    club_id, headers, token = published_shift(client)
+    sam = add_member(client, club_id, headers, "Sam")
+    assignment = first_assignment(client, club_id, headers)
+    client.patch(f"/api/assignments/{assignment['id']}", json={"status": "done"}, headers=headers)
+
+    mine = client.get(f"/api/me/{token}/ledger").json()
+    assert "Sam" in {b["name"] for b in mine["balances"]}
+    assert mine["entries"]
+    assert all(e["member_id"] == assignment["member_id"] for e in mine["entries"])
+
+    assert client.get(f"/api/me/{sam['access_token']}/ledger").json()["entries"] == []
+    assert client.get("/api/me/nonsense/ledger").status_code == 404
 
 
 def test_weekly_shifts_keep_local_time_across_the_clock_change(client):
@@ -211,7 +229,9 @@ def test_member_with_history_stays(client):
         client.delete(f"/api/clubs/{club_id}/members/{bram['id']}", headers=headers).status_code
         == 204
     )
-    assert [m["name"] for m in client.get(f"/api/clubs/{club_id}/members").json()] == ["Anna"]
+    assert [
+        m["name"] for m in client.get(f"/api/clubs/{club_id}/members", headers=headers).json()
+    ] == ["Anna"]
 
 
 def test_only_unscheduled_shifts_can_be_deleted(client):
@@ -349,8 +369,8 @@ def test_member_sees_their_assignments_and_outcomes(client):
     assert me["balance"] == 3
 
 
-def first_assignment(client, club_id):
-    return client.get(f"/api/clubs/{club_id}/assignments").json()[0]
+def first_assignment(client, club_id, headers):
+    return client.get(f"/api/clubs/{club_id}/assignments", headers=headers).json()[0]
 
 
 def add_member(client, club_id, headers, name):
@@ -359,7 +379,7 @@ def add_member(client, club_id, headers, name):
 
 def test_coordinator_can_take_someone_off_a_shift(client):
     club_id, headers, token = published_shift(client)
-    assignment = first_assignment(client, club_id)
+    assignment = first_assignment(client, club_id, headers)
     url = f"/api/assignments/{assignment['id']}"
 
     assert client.delete(url, headers={"X-Coordinator-Token": "wrong"}).status_code == 403
@@ -371,13 +391,13 @@ def test_coordinator_can_take_someone_off_a_shift(client):
 
     # A refill doesn't hand the shift straight back to the same member.
     client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
-    refilled = client.get(f"/api/clubs/{club_id}/assignments").json()
+    refilled = client.get(f"/api/clubs/{club_id}/assignments", headers=headers).json()
     assert all(a["member_id"] != assignment["member_id"] for a in refilled)
 
 
 def test_coordinator_can_give_a_shift_to_someone_else(client):
     club_id, headers, token = published_shift(client)
-    assignment = first_assignment(client, club_id)
+    assignment = first_assignment(client, club_id, headers)
     sam = add_member(client, club_id, headers, "Sam")
 
     candidates = client.get(
@@ -393,13 +413,13 @@ def test_coordinator_can_give_a_shift_to_someone_else(client):
         headers=headers,
     )
     assert moved.status_code == 200
-    assert first_assignment(client, club_id)["member_name"] == "Sam"
+    assert first_assignment(client, club_id, headers)["member_name"] == "Sam"
     assert client.get(f"/api/me/{token}/assignments").json() == []
 
 
 def test_busy_members_and_recorded_outcomes_are_protected(client):
     club_id, headers, _ = published_shift(client)
-    assignment = first_assignment(client, club_id)
+    assignment = first_assignment(client, club_id, headers)
     url = f"/api/assignments/{assignment['id']}"
 
     # Sam takes another shift at exactly the same time.
