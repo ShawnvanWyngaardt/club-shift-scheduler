@@ -1,7 +1,10 @@
 :root {
-  --color-bg: #ffffff;
+  --color-bg: #fcf7ff;
   --color-surface: #f2f4f3;
   --color-ink: #15171c;
+  --color-text-light: #fcf7ff;
+  --color-text-accent: #f58a07;
+  --color-accent-secondary: #f34213;
   --color-muted: #4a515c;
   --color-border: #d9dde0;
   --color-accent: #0b6e69;
@@ -9,6 +12,9 @@
   --color-error: #b42318;
   --color-warning: #b54708;
   --color-warning-surface: #fffaeb;
+  --color-member-dark-1: #210124;
+  --color-member-dark-2: #750d37;
+  --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
@@ -16,6 +22,7 @@
   --radius: 8px;
 
   font-family:
+    'Inter',
     system-ui,
     -apple-system,
     'Segoe UI',
@@ -175,4 +182,12 @@ select {
 
 .error {
   color: var(--color-error);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
 }
