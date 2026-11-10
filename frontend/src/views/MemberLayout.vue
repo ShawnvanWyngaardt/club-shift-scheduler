@@ -43,7 +43,7 @@ onMounted(load)
         <section class="member-header-content">
           <div class="flex flex-col">
             <h1>{{ profile.name }}</h1>
-            <p class="muted club">{{ profile.club_name }}</p>
+            <p class="club">{{ profile.club_name }}</p>
           </div>
           <div class="flex">
             <span class="member-points">
@@ -66,7 +66,7 @@ onMounted(load)
 
 <style scoped>
 .member-header {
-  background: url('../assets/images/member-header.svg') no-repeat 0 0 / cover;
+  background: url('../assets/images/member-header.svg') no-repeat 50% 50% / cover;
   height: 140px;
 }
 .member-header-content {
@@ -96,9 +96,7 @@ onMounted(load)
   border-radius: 50%;
   box-sizing: border-box;
   min-width: 48px;
-  aspect-ratio: 1;
-  line-height: 0.85;
-  flex-shrink: 0;
+  line-height: 0.75;
 }
 .head {
   padding-bottom: 0;
@@ -131,6 +129,6 @@ onMounted(load)
 .tabs a.router-link-exact-active {
   color: var(--color-ink);
   font-weight: 600;
-  borderprofiom-color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 </style>
