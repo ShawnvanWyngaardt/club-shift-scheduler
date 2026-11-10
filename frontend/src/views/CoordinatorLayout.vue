@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ApiError, coordinatorApi, type ClubPublic } from '@/api'
 import DemoPanel from '@/components/DemoPanel.vue'
 import { recallDemo } from '@/demo'
@@ -8,7 +8,13 @@ const props = defineProps<{ clubId: string; token: string }>()
 
 const club = ref<ClubPublic | null>(null)
 const state = ref<'loading' | 'ready' | 'invalid' | 'error'>('loading')
-const demo = recallDemo(Number(props.clubId))
+
+// Club ids can be reused after a demo is deleted, so the token has to match too.
+// Only this club's own demo shows the guide, never one from an earlier visit.
+const demo = computed(() => {
+  const remembered = recallDemo(Number(props.clubId))
+  return remembered?.coordinator_token === props.token ? remembered : null
+})
 
 async function load() {
   state.value = 'loading'
