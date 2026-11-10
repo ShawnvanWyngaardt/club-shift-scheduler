@@ -208,3 +208,27 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Learned:** a tag is a promise about one commit, so the version bump goes in before tagging.
 
 - **Next:** before and after screenshots of every screen, then updated user-flow diagrams, then the v0.3.0 redesign in my own frontend style.
+
+## Thu 5 Nov: v0.2.1 live, and a look at what's next
+
+- **Released:** `v0.2.1` tagged and published. Checked live: member names, assignments and points now need the coordinator link, unauthenticated calls get a `detail` error instead of data, and every member and coordinator view still works.
+- **Built:** updated diagrams for v0.2.1, in `docs/images/v0.2.1/` so the original planning diagrams stay as they were: a screen map with an id for every screen (L1 to L3, M1 to M3, C1 to C4, X1), the first visit, member and coordinator flows, and a proposed onboarding checklist drawn as "not built".
+- **Built:** a screenshot plan, `docs/screenshots.md`: 32 shots in an order where each step creates the data the next one needs, named by screen id so the redesign's "after" set pairs up automatically.
+- **Reviewed:** security beyond the privacy fix. Found that one script could use up the 200-demo limit and lock every visitor out for a day, that creating real clubs has no limit at all, and that there are no security headers.
+- **Decision:** none of these block the redesign. Abuse limits and security headers come in one hardening session before the link goes public. The Content-Security-Policy is written after the redesign, so it lists the final fonts and assets instead of blocking them mid-redesign.
+- **Decision:** keep `/docs` public on purpose. It shows the API to reviewers, and it's a choice, not an oversight.
+- **Planned:** Dependabot alerts, security updates, and secret scanning with push protection.
+- **Learned:** a review of what's _still_ exposed after a fix is part of the fix.
+
+## Tue 10 Nov: into the redesign
+
+- **Decided (6 Nov):** Docker only where it solves a real problem, since I'm moving towards full stack: Postgres locally through Docker Compose and in CI, because SQLite already hid two Postgres differences from me, then one Dockerfile for local, CI and Render. Not a Dockerfile just to have one.
+- **Captured (7 Nov):** the full "before" screenshot set for v0.2.1.
+- **Built (7 Nov):** a Figma file with 19 screens at phone and desktop width, imported from the live app as editable layers instead of screenshots, so the redesign starts from the real screens.
+- **Found (7 Nov):** the first requests to the database after a quiet spell took about 40 seconds, while the health check answered in under 2. The free tiers explain the database sleeping; whether they explain all of the delay is still to test.
+- **Found (7 Nov):** "+1 points" and "1 pts". Planned fix: one plural helper for every count, using `Intl.PluralRules`, so Dutch comes with the right rules later. Reminders for this, a leftover starter CSS block and a box with empty space are marked on the Figma frames.
+- **Redesigned:** the member header. [What changed and why.]
+- **Fixed:** the demo guide showed up in a newly started club. Locally, SQLite gave the new club the id of a deleted demo, so the remembered demo matched by id alone. The panel now also has to match the coordinator token, which is random and never reused. It was worse than it looked: the panel listed member links from a different club.
+- **Idea:** members who belong to several clubs. The hard part isn't tabs; it's that the app has no "person" separate from a membership. The most valuable part would be avoiding clashes across clubs, with each club only seeing "busy" for the others. Added to v2 ideas.
+- **Decision:** a deliberate v1.0 line. Redesign, a second user test with a coordinator, hardening, the Docker and Postgres track, season reset and Dutch. Everything else stays in v2 ideas.
+- **Learned:** an id says which row, not which thing. Anything remembered across visits needs something that can't be reused.
