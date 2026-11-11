@@ -232,3 +232,17 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Idea:** members who belong to several clubs. The hard part isn't tabs; it's that the app has no "person" separate from a membership. The most valuable part would be avoiding clashes across clubs, with each club only seeing "busy" for the others. Added to v2 ideas.
 - **Decision:** a deliberate v1.0 line. Redesign, a second user test with a coordinator, hardening, the Docker and Postgres track, season reset and Dutch. Everything else stays in v2 ideas.
 - **Learned:** an id says which row, not which thing. Anything remembered across visits needs something that can't be reused.
+
+## Wed 11 Nov: a user test with several people finds a real bug
+
+- **Tested:** a full round with several people: a new club, members and shifts across four weeks, links sent out, answers saved, a schedule generated with gaps on purpose, published, answers changed, generated and published again.
+- **Found:** after members changed their answers, generating again filled nothing new. Reproduced it on the live app: first in a demo club, where refilling worked, then in a new club built like the test, where it didn't.
+- **Cause:** the solver allowed at most 2 shifts per member, counted across every upcoming shift instead of per week. Since session 8, refilling counts shifts people already hold, so anyone given 2 shifts in the first round could never be picked again, for any week. The preview gave no reason, so it looked as if the new answers were ignored.
+- **Decision:** remove the maximum instead of making it per week. The fairness order already spreads the work; the maximum only changed the outcome when the one willing member was capped, and then it left empty a slot they had offered to fill. Clubs with several matches or events a week would hit any fixed number anyway. A limit each member sets for themselves is a later feature.
+- **Decision:** not "forget earlier assignments and redo everything" on regenerate. People who already have their shift would get a different one, and it wouldn't have helped, because the maximum would still apply.
+- **Planned (session 13):** remove the maximum; the preview explains every empty slot ("nobody said yes", "said yes, but already has a shift at that time"); the coordinator can assign someone to an empty slot by hand. The solver tests already pass with the change, and a new test fails on the old solver, so it proves the bug.
+- **Redesigned:** the member availability screen. The tab is now "My availability", the button "Save my availability", with a count of how many shifts you're available for. Small styling changes implemented. Redesign still in progress.
+- **Noted:** the new member copy says the fewest-points rule exists "to better their scoring chances". The rule is there to share the work fairly; the copy should say so.
+- **Idea:** a coordinator view of everyone's availability, as a grid of members by shifts, which would also show at a glance why a slot is empty. For the coordinator redesign.
+- **Left behind:** a test club, "Repro test (delete me)", in the live database.
+- **Learned:** the old maximum had a passing test. The test proved the rule did what it said, not that the rule was right. Real people across four weeks found what a three-shift unit test couldn't.
