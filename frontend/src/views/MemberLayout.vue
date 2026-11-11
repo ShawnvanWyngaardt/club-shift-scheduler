@@ -101,7 +101,7 @@ onMounted(load)
   color: var(--color-text-light);
   font-size: 28px;
   font-weight: 800;
-  border-radius: var(--radius-rounded);
+  border-radius: var(--radius-full-rounded);
   box-sizing: border-box;
   min-width: 48px;
   line-height: 0.75;
