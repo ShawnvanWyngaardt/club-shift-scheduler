@@ -55,9 +55,17 @@ onMounted(load)
     </header>
     <div class="page tab-head">
       <nav aria-label="Your pages" class="tabs">
-        <RouterLink :to="{ name: 'member', params: { token } }">My answers</RouterLink>
-        <RouterLink :to="{ name: 'member-assignments', params: { token } }">My shifts</RouterLink>
-        <RouterLink :to="{ name: 'member-standings', params: { token } }">Club points</RouterLink>
+        <div>
+          <RouterLink :to="{ name: 'member', params: { token } }"
+            >My availability</RouterLink
+          >
+          <RouterLink :to="{ name: 'member-assignments', params: { token } }"
+            >My shifts</RouterLink
+          >
+        </div>
+        <RouterLink :to="{ name: 'member-standings', params: { token } }"
+          >Club points</RouterLink
+        >
       </nav>
     </div>
     <RouterView :profile="profile" />
@@ -66,7 +74,7 @@ onMounted(load)
 
 <style scoped>
 .member-header {
-  background: url('../assets/images/member-header.svg') no-repeat 50% 50% / cover;
+  background: url("../assets/images/member-header.svg") no-repeat 50% 50% / cover;
   height: 140px;
 }
 .member-header-content {
@@ -93,7 +101,7 @@ onMounted(load)
   color: var(--color-text-light);
   font-size: 28px;
   font-weight: 800;
-  border-radius: 50%;
+  border-radius: var(--radius-rounded);
   box-sizing: border-box;
   min-width: 48px;
   line-height: 0.75;
@@ -116,6 +124,7 @@ onMounted(load)
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: var(--space-3);
+  justify-content: space-between;
 }
 .tabs a {
   display: inline-flex;

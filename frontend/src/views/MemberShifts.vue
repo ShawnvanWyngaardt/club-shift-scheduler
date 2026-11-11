@@ -62,20 +62,24 @@ onMounted(load)
 
     <section v-else-if="state === 'error'">
       <p class="error">We couldn't load your shifts.</p>
-      <button type="button" @click="load">Try again</button>
+      <button type="button" class="btn-secondary" @click="load">Try again</button>
     </section>
 
     <template v-else>
       <section class="explain">
         <h2>Which shifts could you do?</h2>
         <p class="muted">
-          Tick every shift you could help with, then save. These are your answers, not a schedule:
-          the coordinator's schedule decides who goes, and members with the fewest points go first.
+          Tick every upcoming shift you could help with, then Save. This indicates your
+          availability, and is NOT a final schedule.
+        </p>
+        <p class="muted">
+          The club coordinator's scheduler decides who gets assigned, and members with the
+          fewest points get picked first to better their scoring chances.
         </p>
       </section>
 
       <p v-if="shifts.length === 0" class="muted">
-        No upcoming shifts yet. Check back after your coordinator adds some.
+        No upcoming shifts yet. Check back after your coordinator adds new shifts.
       </p>
 
       <form v-else @submit.prevent="save">
@@ -95,24 +99,29 @@ onMounted(load)
             />
             <span class="shift-main">
               <span class="shift-name">{{ shift.shift_type }}</span>
-              <span class="muted">{{ formatTimeRange(shift.starts_at, shift.ends_at) }}</span>
+              <span class="muted">{{
+                formatTimeRange(shift.starts_at, shift.ends_at)
+              }}</span>
             </span>
-            <span v-if="shift.assigned" class="tag">Yours · +{{ shift.weight }} points</span>
+            <span v-if="shift.assigned" class="tag"
+              >Yours · +{{ shift.weight }} points</span
+            >
             <span v-else class="points">+{{ shift.weight }} points</span>
           </label>
         </fieldset>
 
         <div class="actions">
-          <p class="muted count">{{ ticked }} of {{ shifts.length }} ticked as "I could do this"</p>
-          <button type="submit" :disabled="saveState === 'saving'">
-            {{ saveState === 'saving' ? 'Saving…' : 'Save my answers' }}
+          <p class="count">Available for {{ ticked }} of {{ shifts.length }} shifts.</p>
+          <button type="submit" class="btn-cta" :disabled="saveState === 'saving'">
+            {{ saveState === "saving" ? "Saving…" : "Save my availability" }}
           </button>
-          <p v-if="saveState === 'saved'" class="ok" role="status">
-            Saved. Your answers stay until you change them.
-          </p>
-          <p v-if="saveState === 'failed'" class="error" role="alert">
-            {{ saveMessage }} Your ticks are kept, so try again.
-          </p>
+          <span v-if="saveState === 'saved'" role="status">
+            Your availability has been saved.<br />You can update it when necessary but
+            remember to save again.
+          </span>
+          <span v-if="saveState === 'failed'" role="alert">
+            {{ saveMessage }} Your selections are kept, so please try again.
+          </span>
         </div>
       </form>
     </template>
@@ -121,7 +130,7 @@ onMounted(load)
 
 <style scoped>
 .explain h2 {
-  font-size: 1.25rem;
+  font-size: 1rem;
   margin: 0 0 var(--space-2);
 }
 .explain {
@@ -172,16 +181,26 @@ legend {
 .actions {
   position: sticky;
   bottom: 0;
-  padding: var(--space-4) 0;
+  padding: var(--space-7);
   background: var(--color-bg);
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.35;
 }
+
 .actions button {
+  margin: var(--space-6) 0;
   width: 100%;
 }
 .count {
-  margin: 0 0 var(--space-2);
-}
-.ok {
-  color: var(--color-ok);
+  background: var(--color-pill-bg-accent);
+  border: 1px solid var(--color-text-accent);
+  border-radius: var(--radius-rounded);
+  font-size: 0.75rem;
+  text-align: center;
+  margin: 0 auto var(--space-2);
+  width: fit-content;
+  padding: var(--space-1) var(--space-4);
+  color: var(--color-text-accent);
 }
 </style>
