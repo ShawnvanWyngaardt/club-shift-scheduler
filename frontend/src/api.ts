@@ -77,9 +77,22 @@ export interface ShiftDetail {
   slots: number
 }
 
+export interface BlockedMember {
+  member_id: number
+  member_name: string
+  reason: 'already_on_shift' | 'busy_at_that_time'
+}
+
+export interface UnfilledShift {
+  shift_id: number
+  missing: number
+  /** Who said yes but couldn't be given the shift. Empty: nobody said yes. */
+  blocked: BlockedMember[]
+}
+
 export interface Proposal {
   assignments: { shift_id: number; member_id: number; member_name: string }[]
-  unfilled: { shift_id: number; missing: number }[]
+  unfilled: UnfilledShift[]
 }
 
 export type AssignmentStatus = 'assigned' | 'done' | 'no_show'
@@ -167,6 +180,19 @@ export const coordinatorApi = {
       headers: { 'X-Coordinator-Token': token, 'Content-Type': 'application/json' },
       body: JSON.stringify({ member_id: memberId }),
     }),
+  shiftCandidates: (clubId: number, token: string, shiftId: number) =>
+    request<Candidate[]>(`${club(clubId)}/shifts/${shiftId}/candidates`, {
+      headers: asCoordinator(token),
+    }),
+  assignToShift: (clubId: number, token: string, shiftId: number, memberId: number) =>
+    request<{ id: number; shift_id: number; member_id: number; status: AssignmentStatus }>(
+      `${club(clubId)}/shifts/${shiftId}/assignments`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ member_id: memberId }),
+        headers: asCoordinator(token),
+      },
+    ),
   shiftTypes: (clubId: number) => request<ShiftTypeInfo[]>(`${club(clubId)}/shift-types`),
   addShiftType: (clubId: number, token: string, name: string, weight: number) =>
     request<ShiftTypeInfo>(`${club(clubId)}/shift-types`, {
