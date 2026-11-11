@@ -2,9 +2,6 @@
   --color-bg: #fcf7ff;
   --color-surface: #f2f4f3;
   --color-ink: #15171c;
-  --color-text-light: #fcf7ff;
-  --color-text-accent: #f58a07;
-  --color-accent-secondary: #f34213;
   --color-muted: #4a515c;
   --color-border: #d9dde0;
   --color-accent: #0b6e69;
@@ -12,16 +9,43 @@
   --color-error: #b42318;
   --color-warning: #b54708;
   --color-warning-surface: #fffaeb;
-  --color-member-dark-1: #210124;
-  --color-member-dark-2: #750d37;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
   --radius: 8px;
 
+  /* New design variables */
+  --color-text-light: #fcf7ff;
+  --color-text-accent: #f58a07;
+  --color-text-muted: #909cc2;
+  --color-pill-bg-accent: #f58a0738;
+  --color-accent-primary: #5dfdcb;
+  --color-accent-secondary: #f34213;
+  --color-cta-primary-gradient: linear-gradient(
+    103deg,
+    var(--color-accent-secondary) 17%,
+    #ff7a18 81%,
+    var(--color-text-accent) 92%
+  );
+  --color-member-dark-1: #210124;
+  --color-member-dark-2: #750d37;
+  --radius-rounded: 16px;
+  --radius-full-rounded: 999px;
+
+  /* Alternate brand colors
+  --jet-black: #2d3142ff;
+  --deep-ocean: #0b7a75ff;
+  --ivory: #fbfff1ff;
+  --carrot-orange: #f18f01ff;
+  --indigo-velvet: #4f359bff;
+  */
+
   font-family:
+  /* Inter to be replaced once I've settled on font pairing */
     'Inter',
     system-ui,
     -apple-system,
@@ -58,10 +82,22 @@ button {
   min-height: 44px;
   padding: 0 var(--space-4);
   border: 0;
-  border-radius: var(--radius);
+  border-radius: var(--radius-rounded);
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-text-light);
   cursor: pointer;
+}
+
+button.btn-cta {
+  background: var(--color-cta-primary-gradient);
+}
+
+button.btn-primary {
+  background: var(--color-accent-primary);
+}
+
+button.btn-scondary {
+  background: var(--color-accent-secondary);
 }
 
 button:disabled {
@@ -190,4 +226,8 @@ select {
 
 .flex-col {
   flex-direction: column;
+}
+
+.flex-end {
+  align-self: flex-end;
 }
