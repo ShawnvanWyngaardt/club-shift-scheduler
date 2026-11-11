@@ -305,7 +305,15 @@ def test_partly_filled_shift_gets_refilled(client):
     client.put(f"/api/me/{anna['access_token']}/availability", json={"shift_ids": [shift["id"]]})
     first = client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers).json()
     assert [a["member_name"] for a in first["assignments"]] == ["Anna"]
-    assert first["unfilled"] == [{"shift_id": shift["id"], "missing": 1}]
+    assert first["unfilled"] == [
+        {
+            "shift_id": shift["id"],
+            "missing": 1,
+            "blocked": [
+                {"member_id": anna["id"], "member_name": "Anna", "reason": "already_on_shift"}
+            ],
+        }
+    ]
 
     client.put(f"/api/me/{bram['access_token']}/availability", json={"shift_ids": [shift["id"]]})
     second = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
@@ -446,3 +454,76 @@ def test_busy_members_and_recorded_outcomes_are_protected(client):
     # Once an outcome is recorded, the assignment is history.
     client.patch(url, json={"status": "done"}, headers=headers)
     assert client.delete(url, headers=headers).status_code == 409
+
+
+def same_time_shift(client, club_id, headers, assignment, slots):
+    type_id = client.get(f"/api/clubs/{club_id}/shift-types").json()[0]["id"]
+    return client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": type_id,
+            "starts_at": assignment["starts_at"],
+            "ends_at": assignment["ends_at"],
+            "slots": slots,
+        },
+        headers=headers,
+    ).json()
+
+
+def test_preview_explains_empty_slots(client):
+    club_id, headers, token = published_shift(client)
+    assignment = first_assignment(client, club_id, headers)
+    shift = same_time_shift(client, club_id, headers, assignment, slots=1)
+
+    # Only the member who is already busy at that time says yes.
+    client.put(
+        f"/api/me/{token}/availability",
+        json={"shift_ids": [assignment["shift_id"], shift["id"]]},
+    )
+    preview = client.post(f"/api/clubs/{club_id}/schedule/generate", headers=headers).json()
+    gap = next(u for u in preview["unfilled"] if u["shift_id"] == shift["id"])
+    assert gap["blocked"] == [
+        {
+            "member_id": assignment["member_id"],
+            "member_name": assignment["member_name"],
+            "reason": "busy_at_that_time",
+        }
+    ]
+
+
+def test_coordinator_can_fill_an_open_slot_by_hand(client):
+    club_id, headers, _ = published_shift(client)
+    assignment = first_assignment(client, club_id, headers)
+    shift = same_time_shift(client, club_id, headers, assignment, slots=2)
+    url = f"/api/clubs/{club_id}/shifts/{shift['id']}"
+    sam = add_member(client, club_id, headers, "Sam")
+    tom = add_member(client, club_id, headers, "Tom")
+
+    busy = {
+        c["member_id"]: c["busy"] for c in client.get(f"{url}/candidates", headers=headers).json()
+    }
+    assert busy[assignment["member_id"]] and not busy[sam["id"]]
+
+    wrong = {"X-Coordinator-Token": "wrong"}
+    assert (
+        client.post(f"{url}/assignments", json={"member_id": sam["id"]}, headers=wrong).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            f"{url}/assignments", json={"member_id": sam["id"]}, headers=headers
+        ).status_code
+        == 201
+    )
+    busy_member = {"member_id": assignment["member_id"]}
+    assert client.post(f"{url}/assignments", json=busy_member, headers=headers).status_code == 409
+    assert (
+        client.post(
+            f"{url}/assignments", json={"member_id": tom["id"]}, headers=headers
+        ).status_code
+        == 201
+    )
+
+    uma = add_member(client, club_id, headers, "Uma")
+    full = client.post(f"{url}/assignments", json={"member_id": uma["id"]}, headers=headers)
+    assert full.status_code == 409

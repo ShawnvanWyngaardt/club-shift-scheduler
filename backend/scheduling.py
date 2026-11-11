@@ -9,6 +9,8 @@ from models import (
     Assignment,
     Availability,
     Balance,
+    BlockedMember,
+    Candidate,
     Ledger,
     Member,
     PointsEntry,
@@ -31,6 +33,44 @@ def points_by_member(club_id: int, session: Session) -> dict[int, int]:
         .group_by(PointsEntry.member_id)
     ).all()
     return {member_id: total for member_id, total in rows}
+
+
+def busy_member_ids(session: Session, shift: Shift) -> set[int]:
+    """Members already on this shift, or on another shift that overlaps it."""
+    member_ids = session.exec(
+        select(Assignment.member_id)
+        .join(Shift, Assignment.shift_id == Shift.id)
+        .where(
+            Shift.club_id == shift.club_id,
+            col(Shift.starts_at) < shift.ends_at,
+            col(Shift.ends_at) > shift.starts_at,
+        )
+    ).all()
+    return set(member_ids)
+
+
+def candidates_for(
+    session: Session, shift: Shift, exclude_member_id: int | None = None
+) -> list[Candidate]:
+    """Who could take a slot on this shift: free members who said yes first, fewest points on top."""
+    members = session.exec(select(Member).where(Member.club_id == shift.club_id)).all()
+    said_yes = set(
+        session.exec(select(Availability.member_id).where(Availability.shift_id == shift.id)).all()
+    )
+    busy = busy_member_ids(session, shift)
+    points = points_by_member(shift.club_id, session)
+    candidates = [
+        Candidate(
+            member_id=member.id,
+            name=member.name,
+            points=points.get(member.id, 0),
+            said_yes=member.id in said_yes,
+            busy=member.id in busy,
+        )
+        for member in members
+        if member.id != exclude_member_id
+    ]
+    return sorted(candidates, key=lambda c: (c.busy, not c.said_yes, c.points, c.name))
 
 
 def build_problem(club_id: int, session: Session) -> Problem:
@@ -99,7 +139,14 @@ def to_proposal(problem: Problem, result: Result) -> Proposal:
             for shift_id, member_id in result.assignments
         ],
         unfilled=[
-            UnfilledShift(shift_id=shift_id, missing=missing)
+            UnfilledShift(
+                shift_id=shift_id,
+                missing=missing,
+                blocked=[
+                    BlockedMember(member_id=member_id, member_name=names[member_id], reason=reason)
+                    for member_id, reason in result.blocked.get(shift_id, [])
+                ],
+            )
             for shift_id, missing in result.unfilled.items()
         ],
     )
