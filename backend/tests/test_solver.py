@@ -46,16 +46,15 @@ def test_no_overlapping_shifts_for_one_member():
     assert sum(result.unfilled.values()) == 1
 
 
-def test_respects_max_shifts_per_member():
+def test_one_willing_member_takes_every_shift_they_offered():
     problem = Problem(
         members=[MemberIn(1, "Anna")],
         shifts=[make_shift(i, day=20 + i, start=9, end=12) for i in range(1, 4)],
         available={(1, 1), (1, 2), (1, 3)},
-        max_shifts_per_member=1,
     )
     result = solve_greedy(problem)
-    assert len(result.assignments) == 1
-    assert sum(result.unfilled.values()) == 2
+    assert len(result.assignments) == 3
+    assert result.unfilled == {}
 
 
 def test_reports_impossible_shift_instead_of_failing():
@@ -99,3 +98,32 @@ def test_shifts_already_held_count_for_overlaps():
     result = solve_greedy(problem)
     assert result.assignments == []
     assert result.unfilled == {11: 1}
+
+
+def test_member_with_earlier_shifts_still_fills_a_gap_nobody_else_can():
+    held = [make_shift(10, day=14, start=8, end=9), make_shift(11, day=14, start=9, end=12)]
+    problem = Problem(
+        members=[MemberIn(1, "Ava"), MemberIn(2, "Dirk")],
+        shifts=[make_shift(12, day=21, start=9, end=12)],
+        available={(1, 12)},
+        already_assigned={1: held},
+    )
+    assert solve_greedy(problem).assignments == [(12, 1)]
+
+
+def test_explains_why_a_slot_stays_empty():
+    held = make_shift(10, day=24, start=9, end=12)
+    problem = Problem(
+        members=[MemberIn(1, "Anna"), MemberIn(2, "Bram"), MemberIn(3, "Cas")],
+        shifts=[
+            make_shift(11, day=24, start=11, end=13, slots=3),
+            make_shift(12, day=25, start=9, end=12),
+        ],
+        available={(1, 11), (2, 11)},
+        already_assigned={1: [held]},
+    )
+    result = solve_greedy(problem)
+    assert result.assignments == [(11, 2)]
+    assert result.unfilled == {11: 2, 12: 1}
+    assert sorted(result.blocked[11]) == [(1, "busy_at_that_time"), (2, "already_on_shift")]
+    assert result.blocked[12] == []

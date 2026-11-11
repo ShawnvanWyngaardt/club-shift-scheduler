@@ -1,11 +1,24 @@
 """Generating, publishing and listing a club's schedule."""
 
-from fastapi import APIRouter
-from sqlmodel import select
+from datetime import UTC, datetime
 
+from fastapi import APIRouter, HTTPException
+from sqlmodel import func, select
+
+from database import save
 from dependencies import CoordinatorClub, SessionDep
-from models import Assignment, AssignmentDetail, Member, Proposal, Shift, ShiftType
-from scheduling import build_problem, to_proposal
+from models import (
+    Assignment,
+    AssignmentDetail,
+    AssignmentMove,
+    AssignmentPublic,
+    Candidate,
+    Member,
+    Proposal,
+    Shift,
+    ShiftType,
+)
+from scheduling import build_problem, busy_member_ids, candidates_for, to_proposal
 from solver import solve_greedy
 
 router = APIRouter(prefix="/api/clubs/{club_id}", tags=["schedule"])
@@ -57,3 +70,42 @@ def list_assignments(
         )
         for assignment, member, shift, shift_type in rows
     ]
+
+
+def get_shift_in_club(session: SessionDep, club_id: int, shift_id: int) -> Shift:
+    shift = session.get(Shift, shift_id)
+    if shift is None or shift.club_id != club_id:
+        raise HTTPException(status_code=404, detail="Shift not found in this club")
+    return shift
+
+
+@router.get("/shifts/{shift_id}/candidates")
+def open_slot_candidates(
+    club_id: int, shift_id: int, session: SessionDep, club: CoordinatorClub
+) -> list[Candidate]:
+    """Who could fill an empty slot on this shift."""
+    return candidates_for(session, get_shift_in_club(session, club_id, shift_id))
+
+
+@router.post("/shifts/{shift_id}/assignments", response_model=AssignmentPublic, status_code=201)
+def assign_by_hand(
+    club_id: int, shift_id: int, data: AssignmentMove, session: SessionDep, club: CoordinatorClub
+) -> Assignment:
+    """The coordinator fills an empty slot, for example after asking around in the club chat."""
+    shift = get_shift_in_club(session, club_id, shift_id)
+    if shift.starts_at <= datetime.now(UTC):
+        raise HTTPException(status_code=409, detail="This shift has already started")
+    taken = session.exec(
+        select(func.count()).select_from(Assignment).where(Assignment.shift_id == shift.id)
+    ).one()
+    if taken >= shift.slots:
+        raise HTTPException(status_code=409, detail="This shift is already full")
+
+    member = session.get(Member, data.member_id)
+    if member is None or member.club_id != club_id:
+        raise HTTPException(status_code=404, detail="Member not found in this club")
+    if member.id in busy_member_ids(session, shift):
+        raise HTTPException(
+            status_code=409, detail=f"{member.name} is already on a shift at that time"
+        )
+    return save(session, Assignment(shift_id=shift.id, member_id=member.id))

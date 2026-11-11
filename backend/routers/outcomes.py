@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Header, HTTPException
-from sqlmodel import Session, col, select
+from sqlmodel import Session, select
 
 from dependencies import CoordinatorClub, SessionDep, check_coordinator
 from models import (
@@ -21,7 +21,7 @@ from models import (
     Shift,
     ShiftType,
 )
-from scheduling import build_ledger, points_by_member
+from scheduling import build_ledger, busy_member_ids, candidates_for
 
 router = APIRouter(prefix="/api", tags=["outcomes"])
 
@@ -55,20 +55,6 @@ def require_changeable(assignment: Assignment, shift: Shift) -> None:
         )
     if shift.starts_at <= datetime.now(UTC):
         raise HTTPException(status_code=409, detail="This shift has already started")
-
-
-def busy_member_ids(session: Session, shift: Shift) -> set[int]:
-    """Members already on this shift, or on another shift that overlaps it."""
-    member_ids = session.exec(
-        select(Assignment.member_id)
-        .join(Shift, Assignment.shift_id == Shift.id)
-        .where(
-            Shift.club_id == shift.club_id,
-            col(Shift.starts_at) < shift.ends_at,
-            col(Shift.ends_at) > shift.starts_at,
-        )
-    ).all()
-    return set(member_ids)
 
 
 def clear_answer(session: Session, member_id: int, shift_id: int) -> None:
@@ -123,26 +109,8 @@ def list_candidates(
     assignment_id: int, session: SessionDep, x_coordinator_token: CoordinatorToken
 ) -> list[Candidate]:
     """Who could take this shift instead: free members who said yes first, fewest points on top."""
-    assignment, shift, _, club = load_assignment(session, assignment_id, x_coordinator_token)
-    members = session.exec(select(Member).where(Member.club_id == club.id)).all()
-    said_yes = set(
-        session.exec(select(Availability.member_id).where(Availability.shift_id == shift.id)).all()
-    )
-    busy = busy_member_ids(session, shift)
-    points = points_by_member(club.id, session)
-
-    candidates = [
-        Candidate(
-            member_id=member.id,
-            name=member.name,
-            points=points.get(member.id, 0),
-            said_yes=member.id in said_yes,
-            busy=member.id in busy,
-        )
-        for member in members
-        if member.id != assignment.member_id
-    ]
-    return sorted(candidates, key=lambda c: (c.busy, not c.said_yes, c.points, c.name))
+    assignment, shift, _, _ = load_assignment(session, assignment_id, x_coordinator_token)
+    return candidates_for(session, shift, exclude_member_id=assignment.member_id)
 
 
 @router.put("/assignments/{assignment_id}/member", response_model=AssignmentPublic)

@@ -210,9 +210,18 @@ class ProposedAssignment(SQLModel):
     member_name: str
 
 
+class BlockedMember(SQLModel):
+    """Someone who said yes to a shift but couldn't be given it, and why."""
+
+    member_id: int
+    member_name: str
+    reason: Literal["already_on_shift", "busy_at_that_time"]
+
+
 class UnfilledShift(SQLModel):
     shift_id: int
     missing: int
+    blocked: list[BlockedMember] = Field(default_factory=list)  # empty: nobody said yes
 
 
 class Proposal(SQLModel):

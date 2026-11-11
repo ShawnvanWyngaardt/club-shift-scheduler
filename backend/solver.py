@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Literal
 
 
 # ---------- Input and Output ----------
@@ -27,15 +28,20 @@ class Problem:
     members: list[MemberIn]
     shifts: list[ShiftIn]
     available: set[tuple[int, int]]  # (member_id, shift_id) pairs
-    max_shifts_per_member: int = 2
-    # Shifts members already hold from earlier publishes: they count for overlaps, limits and load.
+    # Shifts members already hold from earlier publishes: they count for overlaps and load.
     already_assigned: dict[int, list[ShiftIn]] = field(default_factory=dict)
+
+
+Reason = Literal["already_on_shift", "busy_at_that_time"]
 
 
 @dataclass
 class Result:
     assignments: list[tuple[int, int]] = field(default_factory=list)  # (shift_id, member_id)
     unfilled: dict[int, int] = field(default_factory=dict)  # shift_id -> empty slots
+    # For each shift with empty slots: who said yes, and why they couldn't take it.
+    # An empty list means nobody said yes.
+    blocked: dict[int, list[tuple[int, Reason]]] = field(default_factory=dict)
 
 
 @dataclass
@@ -65,11 +71,23 @@ def no_overlap(member: MemberIn, shift: ShiftIn, problem: Problem, state: State)
     )
 
 
-def under_max(member: MemberIn, shift: ShiftIn, problem: Problem, state: State) -> bool:
-    return len(state.shifts_of[member.id]) < problem.max_shifts_per_member
+HARD_RULES: list[Rule] = [is_available, not_already_on_shift, no_overlap]
+
+# What to tell the coordinator when a member who said yes is stopped by a rule.
+REASONS: dict[Rule, Reason] = {
+    not_already_on_shift: "already_on_shift",
+    no_overlap: "busy_at_that_time",
+}
 
 
-HARD_RULES: list[Rule] = [is_available, not_already_on_shift, no_overlap, under_max]
+def blocking_reason(
+    member: MemberIn, shift: ShiftIn, problem: Problem, state: State, rules: list[Rule]
+) -> Reason | None:
+    """Why a member who said yes can't take this shift, or None if they can."""
+    for rule in rules:
+        if rule is not is_available and not rule(member, shift, problem, state):
+            return REASONS[rule]
+    return None
 
 
 # ---------- Greedy solver ----------
@@ -111,5 +129,16 @@ def solve_greedy(problem: Problem, rules: list[Rule] = HARD_RULES) -> Result:
             result.assignments.append((shift.id, chosen.id))
             state.shifts_of[chosen.id].append(shift)
             state.load[chosen.id] += shift.weight
+
+    # Explain every gap. Rules only get stricter as shifts are handed out, so anyone
+    # who couldn't take a slot when its turn came still can't at the end.
+    for shift in problem.shifts:
+        if shift.id in result.unfilled:
+            result.blocked[shift.id] = [
+                (m.id, reason)
+                for m in problem.members
+                if is_available(m, shift, problem, state)
+                and (reason := blocking_reason(m, shift, problem, state, rules)) is not None
+            ]
 
     return result
