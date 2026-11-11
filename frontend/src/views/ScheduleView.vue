@@ -9,6 +9,8 @@ import {
 } from '@/api'
 import { formatDay, formatTimeRange, groupByDay } from '@/time'
 import AssignmentChange from '@/components/AssignmentChange.vue'
+import EmptySlotReason from '@/components/EmptySlotReason.vue'
+import FillOpenSlot from '@/components/FillOpenSlot.vue'
 
 const props = defineProps<{ clubId: string; token: string }>()
 const clubId = computed(() => Number(props.clubId))
@@ -112,14 +114,15 @@ const previewRows = computed(() => {
       withPoints(a.member_id, a.member_name),
     ])
   }
-  const missing = new Map(proposal.value.unfilled.map((u) => [u.shift_id, u.missing]))
+  const gaps = new Map(proposal.value.unfilled.map((u) => [u.shift_id, u]))
   return shifts.value
-    .filter((s) => added.has(s.id) || missing.has(s.id))
+    .filter((s) => added.has(s.id) || gaps.has(s.id))
     .map((s) => ({
       ...s,
       held: holders.value.get(s.id) ?? [],
       added: added.get(s.id) ?? [],
-      missing: missing.get(s.id) ?? 0,
+      gap: gaps.get(s.id),
+      missing: gaps.get(s.id)?.missing ?? 0,
     }))
 })
 
@@ -200,6 +203,14 @@ onMounted(load)
                   />
                 </li>
               </ul>
+              <FillOpenSlot
+                v-if="shift.missing > 0"
+                :club-id="clubId"
+                :token="token"
+                :shift-id="shift.id"
+                :shift-label="shift.shift_type"
+                @changed="load"
+              />
             </article>
           </section>
         </template>
@@ -252,6 +263,7 @@ onMounted(load)
               </span>
             </p>
             <p v-if="row.missing > 0" class="gap-note">{{ row.missing }} missing</p>
+            <EmptySlotReason v-if="row.gap" :blocked="row.gap.blocked" />
           </article>
         </section>
 
