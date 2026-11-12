@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile, type MyShift } from '@/api'
 import { formatTimeRange, groupByDay } from '@/time'
+import IconCheckCircle from '@/components/icons/IconCheckCircle.vue'
+import IconAlertCircle from '@/components/icons/IconAlertCircle.vue'
 
 const props = defineProps<{ token: string; profile?: MemberProfile }>()
 
@@ -68,17 +70,17 @@ onMounted(load)
     <template v-else>
       <section class="explain">
         <h2>Which shifts could you do?</h2>
-        <p class="muted">
+        <p class="descriptive">
           Tick every upcoming shift you could help with, then Save. This indicates your
           availability, and is NOT a final schedule.
         </p>
-        <p class="muted">
+        <p class="descriptive">
           The club coordinator's scheduler decides who gets assigned, and members with the
           fewest points get picked first to better their scoring chances.
         </p>
       </section>
 
-      <p v-if="shifts.length === 0" class="muted">
+      <p v-if="shifts.length === 0" class="descriptive">
         No upcoming shifts yet. Check back after your coordinator adds new shifts.
       </p>
 
@@ -99,7 +101,7 @@ onMounted(load)
             />
             <span class="shift-main">
               <span class="shift-name">{{ shift.shift_type }}</span>
-              <span class="muted">{{
+              <span class="shift-time">{{
                 formatTimeRange(shift.starts_at, shift.ends_at)
               }}</span>
             </span>
@@ -111,17 +113,37 @@ onMounted(load)
         </fieldset>
 
         <div class="actions">
-          <p class="count">Available for {{ ticked }} of {{ shifts.length }} shifts.</p>
+          <p class="count">
+            Available for <span>{{ ticked }} of {{ shifts.length }}</span> shifts.
+          </p>
+          <Transition name="save-msg" mode="out-in">
+            <div
+              v-if="saveState === 'saved'"
+              key="saved"
+              role="status"
+              class="flex gap-3 items-center"
+            >
+              <IconCheckCircle :size="24" color="var(--color-text-accent)" />
+              <span>
+                Your availability has been saved. You can update it when necessary but
+                remember to save again.
+              </span>
+            </div>
+            <div
+              v-else-if="saveState === 'failed'"
+              key="failed"
+              role="alert"
+              class="flex gap-3 items-center"
+            >
+              <IconAlertCircle :size="24" color="var(--color-error)" />
+              <span
+                >{{ saveMessage }} Your selections are kept, so please try again.</span
+              >
+            </div>
+          </Transition>
           <button type="submit" class="btn-cta" :disabled="saveState === 'saving'">
             {{ saveState === "saving" ? "Saving…" : "Save my availability" }}
           </button>
-          <span v-if="saveState === 'saved'" role="status">
-            Your availability has been saved.<br />You can update it when necessary but
-            remember to save again.
-          </span>
-          <span v-if="saveState === 'failed'" role="alert">
-            {{ saveMessage }} Your selections are kept, so please try again.
-          </span>
         </div>
       </form>
     </template>
@@ -129,78 +151,138 @@ onMounted(load)
 </template>
 
 <style scoped>
-.explain h2 {
-  font-size: 1rem;
-  margin: 0 0 var(--space-2);
-}
 .explain {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
 }
+
+.descriptive {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .day {
   border: 0;
   margin: 0 0 var(--space-6);
-  padding: 0;
+  padding: 0 0 var(--space-6);
 }
+
 legend {
+  color: var(--color-text);
+  font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: var(--space-2);
 }
+
 .shift {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-height: 56px;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
+  border-top: none;
+  border-right: 3px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-left: none;
   border-radius: var(--radius);
-  margin-bottom: var(--space-2);
+  box-shadow: 0px 3px 12px -5px var(--color-shadow);
+  margin-bottom: var(--space-3);
   cursor: pointer;
 }
+
+.shift:has(input:checked) {
+  border-color: var(--color-text-accent);
+}
+
 .shift.assigned {
   background: var(--color-surface);
   cursor: default;
 }
-.shift input {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--color-accent);
-}
+
 .shift-main {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
+
 .shift-name {
+  color: var(--color-text);
+  font-size: 1rem;
   font-weight: 600;
 }
+
+.shift-time {
+  font-family: var(--font-time);
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
 .points {
-  color: var(--color-accent);
-  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
   white-space: nowrap;
 }
+
 .actions {
   position: sticky;
   bottom: 0;
   padding: var(--space-7);
   background: var(--color-bg);
-  text-align: center;
+  border-top: 3px solid var(--color-member-dark-1);
+  box-shadow: 0px -40px 40px var(--color-bg);
   font-size: 0.875rem;
   line-height: 1.35;
 }
 
 .actions button {
+  font-size: 1rem;
   margin: var(--space-6) 0;
   width: 100%;
 }
+
 .count {
-  background: var(--color-pill-bg-accent);
-  border: 1px solid var(--color-text-accent);
+  background: var(--color-bg);
+  border: 1px solid var(--color-member-dark-1);
   border-radius: var(--radius-rounded);
+  color: var(--color-member-dark-1);
   font-size: 0.75rem;
+  font-weight: 500;
   text-align: center;
-  margin: 0 auto var(--space-2);
+  margin: 0 auto;
   width: fit-content;
   padding: var(--space-1) var(--space-4);
+  position: relative;
+  bottom: var(--space-8);
+}
+
+.count span {
   color: var(--color-text-accent);
+  font-size: 0.825rem;
+  font-weight: 600;
+}
+/* Save message: fade + slight rise in, quicker fade out */
+.save-msg-enter-active {
+  transition: opacity 250ms ease-out, transform 250ms ease-out;
+}
+.save-msg-leave-active {
+  transition: opacity 150ms ease-in, transform 150ms ease-in;
+}
+.save-msg-enter-from,
+.save-msg-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-msg-enter-active,
+  .save-msg-leave-active {
+    transition: opacity 150ms linear;
+  }
+  .save-msg-enter-from,
+  .save-msg-leave-to {
+    transform: none;
+  }
 }
 </style>

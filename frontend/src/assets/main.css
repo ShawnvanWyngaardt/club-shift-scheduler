@@ -1,6 +1,6 @@
 :root {
   --color-bg: #fcf7ff;
-  --color-surface: #f2f4f3;
+  --color-surface: #fcf7ff;
   --color-ink: #15171c;
   --color-muted: #4a515c;
   --color-border: #d9dde0;
@@ -19,6 +19,8 @@
   --radius: 8px;
 
   /* New design variables */
+  --color-text: #273e47;
+  --color-shadow: #909cc281;
   --color-text-light: #fcf7ff;
   --color-text-accent: #f58a07;
   --color-text-muted: #909cc2;
@@ -33,6 +35,7 @@
   );
   --color-member-dark-1: #210124;
   --color-member-dark-2: #750d37;
+  --font-time: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
   --radius-rounded: 16px;
   --radius-full-rounded: 999px;
 
@@ -71,9 +74,24 @@ body {
   padding: var(--space-6) var(--space-4);
 }
 
-h1 {
+h1,
+h2 {
   margin: 0 0 var(--space-2);
+  line-height: 1.25;
+}
+
+h1 {
   font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  color: var(--color-member-dark-1);
+}
+
+h3 {
+  font-size: 1rem;
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 button {
@@ -147,20 +165,63 @@ select {
   color: var(--color-ink);
 }
 
+/* Custom checkbox: box, tick and states */
+input[type='checkbox'] {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 2px solid var(--color-text-muted); /* unchecked border */
+  border-radius: 4px;
+  background: var(--color-bg);
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
+}
+
+/* The tick: a rotated L shape, hidden until checked */
+input[type='checkbox']::before {
+  content: '';
+  width: 5px;
+  height: 10px;
+  margin-top: -2px;
+  border: solid var(--color-bg); /* tick colour */
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 120ms;
+}
+
+input[type='checkbox']:checked {
+  background: var(--color-text-accent); /* checked fill */
+  border-color: var(--color-text-accent); /* checked border */
+}
+input[type='checkbox']:checked::before {
+  transform: rotate(45deg) scale(1);
+}
+
+input[type='checkbox']:hover {
+  border-color: var(--color-text-accent);
+}
+
+/* Once appearance is off, the browser no longer draws a focus ring for you */
+input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--color-text-accent);
+  outline-offset: 2px;
+}
+
+input[type='checkbox']:disabled {
+  border-color: var(--color-text-muted);
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
 .setup-section {
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-6);
   margin-bottom: var(--space-6);
-}
-
-.setup-section h2 {
-  font-size: 1.25rem;
-  margin: 0 0 var(--space-2);
-}
-
-.setup-section h3 {
-  font-size: 1rem;
-  margin: var(--space-4) 0 var(--space-2);
 }
 
 .form-grid {
@@ -220,14 +281,63 @@ select {
   color: var(--color-error);
 }
 
-.flex {
-  display: flex;
-}
+/* ==========================================================================
+   Flex utilities (Tailwind-style names)
+   Usage: <div class="flex items-center justify-between gap-3">
+   Gap numbers map to the --space-* tokens, not Tailwind's scale.
+   ========================================================================== */
 
-.flex-col {
-  flex-direction: column;
-}
+/* Display */
+.flex { display: flex; }
+.inline-flex { display: inline-flex; }
 
-.flex-end {
-  align-self: flex-end;
-}
+/* Direction */
+.flex-row { flex-direction: row; }
+.flex-row-reverse { flex-direction: row-reverse; }
+.flex-col { flex-direction: column; }
+.flex-col-reverse { flex-direction: column-reverse; }
+
+/* Wrap */
+.flex-wrap { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+
+/* Grow / shrink */
+.flex-1 { flex: 1 1 0%; }
+.flex-auto { flex: 1 1 auto; }
+.flex-none { flex: none; }
+.grow { flex-grow: 1; }
+.grow-0 { flex-grow: 0; }
+.shrink { flex-shrink: 1; }
+.shrink-0 { flex-shrink: 0; }
+
+/* Main axis (justify-content) */
+.justify-start { justify-content: flex-start; }
+.justify-center { justify-content: center; }
+.justify-end { justify-content: flex-end; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.justify-evenly { justify-content: space-evenly; }
+
+/* Cross axis (align-items) */
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.items-baseline { align-items: baseline; }
+.items-stretch { align-items: stretch; }
+
+/* Single child (align-self) */
+.self-auto { align-self: auto; }
+.self-start { align-self: flex-start; }
+.self-center { align-self: center; }
+.self-end { align-self: flex-end; }
+.self-stretch { align-self: stretch; }
+
+/* Gap (uses --space-* tokens) */
+.gap-0 { gap: 0; }
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+.gap-7 { gap: var(--space-7); }
+.gap-8 { gap: var(--space-8); }
