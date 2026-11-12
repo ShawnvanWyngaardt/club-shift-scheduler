@@ -1,6 +1,6 @@
 :root {
   --color-bg: #fcf7ff;
-  --color-surface: #f2f4f3;
+  --color-surface: #fcf7ff;
   --color-ink: #15171c;
   --color-muted: #4a515c;
   --color-border: #d9dde0;
@@ -19,6 +19,8 @@
   --radius: 8px;
 
   /* New design variables */
+
+  --color-shadow: #909cc281;
   --color-text-light: #fcf7ff;
   --color-text-accent: #f58a07;
   --color-text-muted: #909cc2;
@@ -33,6 +35,7 @@
   );
   --color-member-dark-1: #210124;
   --color-member-dark-2: #750d37;
+  --font-time: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
   --radius-rounded: 16px;
   --radius-full-rounded: 999px;
 
@@ -146,6 +149,60 @@ select {
   background: var(--color-bg);
   color: var(--color-ink);
 }
+
+.shift input {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 2px solid var(--color-text-muted); /* unchecked border */
+  border-radius: 4px;
+  background: var(--color-bg);
+  cursor: pointer;
+  transition:
+    background-color 120ms,
+    border-color 120ms;
+}
+
+/* The tick: a rotated L shape, hidden until checked */
+input[type='checkbox']::before {
+  content: '';
+  width: 5px;
+  height: 10px;
+  margin-top: -2px;
+  border: solid var(--color-bg); /* tick colour */
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 120ms;
+}
+
+input[type='checkbox']:checked {
+  background: var(--color-text-accent); /* checked fill */
+  border-color: var(--color-text-accent); /* checked border */
+}
+input[type='checkbox']:checked::before {
+  transform: rotate(45deg) scale(1);
+}
+
+input[type='checkbox']:hover {
+  border-color: var(--color-text-accent);
+}
+
+/* Once appearance is off, the browser no longer draws a focus ring for you */
+input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--color-text-accent);
+  outline-offset: 2px;
+}
+
+input[type='checkbox']:disabled {
+  border-color: var(--color-text-muted);
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+/* END */
 
 .setup-section {
   border-top: 1px solid var(--color-border);

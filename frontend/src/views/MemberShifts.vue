@@ -99,7 +99,7 @@ onMounted(load)
             />
             <span class="shift-main">
               <span class="shift-name">{{ shift.shift_type }}</span>
-              <span class="muted">{{
+              <span class="shift-time">{{
                 formatTimeRange(shift.starts_at, shift.ends_at)
               }}</span>
             </span>
@@ -151,19 +151,21 @@ legend {
   gap: var(--space-3);
   min-height: 56px;
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
+  border-top: none;
+  border-right: 3px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-left: none;
   border-radius: var(--radius);
-  margin-bottom: var(--space-2);
+  box-shadow: 0px 3px 12px -5px var(--color-shadow);
+  margin-bottom: var(--space-3);
   cursor: pointer;
+}
+.shift:has(input:checked) {
+  border-color: var(--color-text-accent);
 }
 .shift.assigned {
   background: var(--color-surface);
   cursor: default;
-}
-.shift input {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--color-accent);
 }
 .shift-main {
   display: flex;
@@ -171,11 +173,19 @@ legend {
   flex: 1;
 }
 .shift-name {
+  color: var(--color-member-dark-1);
   font-weight: 600;
 }
+.shift-time {
+  font-family: var(--font-time);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
 .points {
-  color: var(--color-accent);
-  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
   white-space: nowrap;
 }
 .actions {
@@ -183,6 +193,7 @@ legend {
   bottom: 0;
   padding: var(--space-7);
   background: var(--color-bg);
+  border-top: 3px solid var(--color-member-dark-1);
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.35;
@@ -197,6 +208,7 @@ legend {
   border: 1px solid var(--color-text-accent);
   border-radius: var(--radius-rounded);
   font-size: 0.75rem;
+  font-weight: 600;
   text-align: center;
   margin: 0 auto var(--space-2);
   width: fit-content;

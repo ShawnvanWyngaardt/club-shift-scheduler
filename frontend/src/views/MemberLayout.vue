@@ -133,11 +133,11 @@ onMounted(load)
   padding: 0 var(--space-3);
   color: var(--color-muted);
   text-decoration: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: 4px solid transparent;
 }
 .tabs a.router-link-exact-active {
   color: var(--color-ink);
   font-weight: 600;
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-secondary);
 }
 </style>

@@ -1,3 +1,4 @@
+import '@fontsource-variable/montserrat'
 import './assets/main.css'
 
 import { createApp } from 'vue'
