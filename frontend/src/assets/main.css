@@ -19,7 +19,7 @@
   --radius: 8px;
 
   /* New design variables */
-
+  --color-text: #273e47;
   --color-shadow: #909cc281;
   --color-text-light: #fcf7ff;
   --color-text-accent: #f58a07;
@@ -74,9 +74,24 @@ body {
   padding: var(--space-6) var(--space-4);
 }
 
-h1 {
+h1,
+h2 {
   margin: 0 0 var(--space-2);
+  line-height: 1.25;
+}
+
+h1 {
   font-size: 1.75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  color: var(--color-member-dark-1);
+}
+
+h3 {
+  font-size: 1rem;
+  margin: var(--space-4) 0 var(--space-2);
 }
 
 button {
@@ -202,22 +217,10 @@ input[type='checkbox']:disabled {
   cursor: not-allowed;
 }
 
-/* END */
-
 .setup-section {
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-6);
   margin-bottom: var(--space-6);
-}
-
-.setup-section h2 {
-  font-size: 1.25rem;
-  margin: 0 0 var(--space-2);
-}
-
-.setup-section h3 {
-  font-size: 1rem;
-  margin: var(--space-4) 0 var(--space-2);
 }
 
 .form-grid {

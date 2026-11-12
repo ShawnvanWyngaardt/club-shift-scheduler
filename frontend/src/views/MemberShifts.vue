@@ -68,17 +68,17 @@ onMounted(load)
     <template v-else>
       <section class="explain">
         <h2>Which shifts could you do?</h2>
-        <p class="muted">
+        <p class="descriptive">
           Tick every upcoming shift you could help with, then Save. This indicates your
           availability, and is NOT a final schedule.
         </p>
-        <p class="muted">
+        <p class="descriptive">
           The club coordinator's scheduler decides who gets assigned, and members with the
           fewest points get picked first to better their scoring chances.
         </p>
       </section>
 
-      <p v-if="shifts.length === 0" class="muted">
+      <p v-if="shifts.length === 0" class="descriptive">
         No upcoming shifts yet. Check back after your coordinator adds new shifts.
       </p>
 
@@ -129,26 +129,37 @@ onMounted(load)
 </template>
 
 <style scoped>
-.explain h2 {
-  font-size: 1rem;
-  margin: 0 0 var(--space-2);
-}
 .explain {
   margin-bottom: var(--space-6);
 }
+
+.descriptive {
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .day {
   border: 0;
   margin: 0 0 var(--space-6);
   padding: 0;
 }
+
+fieldset {
+  margin: 0 0 var(--space-6);
+}
+
 legend {
+  color: var(--color-member-dark-1);
+  font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: var(--space-2);
 }
+
 .shift {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-height: 56px;
   padding: var(--space-3) var(--space-4);
   border-top: none;
@@ -160,34 +171,42 @@ legend {
   margin-bottom: var(--space-3);
   cursor: pointer;
 }
+
 .shift:has(input:checked) {
   border-color: var(--color-text-accent);
 }
+
 .shift.assigned {
   background: var(--color-surface);
   cursor: default;
 }
+
 .shift-main {
   display: flex;
   flex-direction: column;
   flex: 1;
 }
+
 .shift-name {
-  color: var(--color-member-dark-1);
+  color: var(--color-text);
+  font-size: 1rem;
   font-weight: 600;
 }
+
 .shift-time {
   font-family: var(--font-time);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--color-text-muted);
 }
+
 .points {
   color: var(--color-text-muted);
-  font-size: 0.95rem;
+  font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
 }
+
 .actions {
   position: sticky;
   bottom: 0;
@@ -203,6 +222,7 @@ legend {
   margin: var(--space-6) 0;
   width: 100%;
 }
+
 .count {
   background: var(--color-pill-bg-accent);
   border: 1px solid var(--color-text-accent);

@@ -129,14 +129,14 @@ onMounted(load)
 .tabs a {
   display: inline-flex;
   align-items: center;
+  font-size: 0.875rem;
   min-height: 48px;
   padding: 0 var(--space-3);
-  color: var(--color-muted);
+  color: var(--color-member-dark-1);
   text-decoration: none;
   border-bottom: 4px solid transparent;
 }
 .tabs a.router-link-exact-active {
-  color: var(--color-ink);
   font-weight: 600;
   border-color: var(--color-accent-secondary);
 }
