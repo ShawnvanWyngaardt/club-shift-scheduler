@@ -116,17 +116,31 @@ onMounted(load)
           <p class="count">
             Available for <span>{{ ticked }} of {{ shifts.length }}</span> shifts.
           </p>
-          <div v-if="saveState === 'saved'" role="status" class="flex gap-3 items-center">
-            <IconCheckCircle :size="24" color="var(--color-text-accent)" />
-            <span>
-              Your availability has been saved. You can update it when necessary but
-              remember to save again.
-            </span>
-          </div>
-          <div v-if="saveState === 'failed'" role="alert" class="flex gap-3 items-center">
-            <IconAlertCircle :size="24" color="var(--color-error)" />
-            <span>{{ saveMessage }} Your selections are kept, so please try again.</span>
-          </div>
+          <Transition name="save-msg" mode="out-in">
+            <div
+              v-if="saveState === 'saved'"
+              key="saved"
+              role="status"
+              class="flex gap-3 items-center"
+            >
+              <IconCheckCircle :size="24" color="var(--color-text-accent)" />
+              <span>
+                Your availability has been saved. You can update it when necessary but
+                remember to save again.
+              </span>
+            </div>
+            <div
+              v-else-if="saveState === 'failed'"
+              key="failed"
+              role="alert"
+              class="flex gap-3 items-center"
+            >
+              <IconAlertCircle :size="24" color="var(--color-error)" />
+              <span
+                >{{ saveMessage }} Your selections are kept, so please try again.</span
+              >
+            </div>
+          </Transition>
           <button type="submit" class="btn-cta" :disabled="saveState === 'saving'">
             {{ saveState === "saving" ? "Saving…" : "Save my availability" }}
           </button>
@@ -240,12 +254,35 @@ legend {
   width: fit-content;
   padding: var(--space-1) var(--space-4);
   position: relative;
-  top: -46px;
+  bottom: var(--space-8);
 }
 
 .count span {
   color: var(--color-text-accent);
   font-size: 0.825rem;
   font-weight: 600;
+}
+/* Save message: fade + slight rise in, quicker fade out */
+.save-msg-enter-active {
+  transition: opacity 250ms ease-out, transform 250ms ease-out;
+}
+.save-msg-leave-active {
+  transition: opacity 150ms ease-in, transform 150ms ease-in;
+}
+.save-msg-enter-from,
+.save-msg-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save-msg-enter-active,
+  .save-msg-leave-active {
+    transition: opacity 150ms linear;
+  }
+  .save-msg-enter-from,
+  .save-msg-leave-to {
+    transform: none;
+  }
 }
 </style>
