@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile, type MyShift } from '@/api'
 import { formatTimeRange, groupByDay } from '@/time'
+import IconCheckCircle from '@/components/icons/IconCheckCircle.vue'
+import IconAlertCircle from '@/components/icons/IconAlertCircle.vue'
 
 const props = defineProps<{ token: string; profile?: MemberProfile }>()
 
@@ -111,17 +113,23 @@ onMounted(load)
         </fieldset>
 
         <div class="actions">
-          <p class="count">Available for {{ ticked }} of {{ shifts.length }} shifts.</p>
+          <p class="count">
+            Available for <span>{{ ticked }} of {{ shifts.length }}</span> shifts.
+          </p>
+          <div v-if="saveState === 'saved'" role="status" class="flex gap-3 items-center">
+            <IconCheckCircle :size="24" color="var(--color-text-accent)" />
+            <span>
+              Your availability has been saved. You can update it when necessary but
+              remember to save again.
+            </span>
+          </div>
+          <div v-if="saveState === 'failed'" role="alert" class="flex gap-3 items-center">
+            <IconAlertCircle :size="24" color="var(--color-error)" />
+            <span>{{ saveMessage }} Your selections are kept, so please try again.</span>
+          </div>
           <button type="submit" class="btn-cta" :disabled="saveState === 'saving'">
             {{ saveState === "saving" ? "Saving…" : "Save my availability" }}
           </button>
-          <span v-if="saveState === 'saved'" role="status">
-            Your availability has been saved.<br />You can update it when necessary but
-            remember to save again.
-          </span>
-          <span v-if="saveState === 'failed'" role="alert">
-            {{ saveMessage }} Your selections are kept, so please try again.
-          </span>
         </div>
       </form>
     </template>
@@ -130,7 +138,7 @@ onMounted(load)
 
 <style scoped>
 .explain {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-8);
 }
 
 .descriptive {
@@ -142,15 +150,11 @@ onMounted(load)
 .day {
   border: 0;
   margin: 0 0 var(--space-6);
-  padding: 0;
-}
-
-fieldset {
-  margin: 0 0 var(--space-6);
+  padding: 0 0 var(--space-6);
 }
 
 legend {
-  color: var(--color-member-dark-1);
+  color: var(--color-text);
   font-size: 0.875rem;
   font-weight: 600;
   margin-bottom: var(--space-2);
@@ -213,26 +217,35 @@ legend {
   padding: var(--space-7);
   background: var(--color-bg);
   border-top: 3px solid var(--color-member-dark-1);
-  text-align: center;
+  box-shadow: 0px -40px 40px var(--color-bg);
   font-size: 0.875rem;
   line-height: 1.35;
 }
 
 .actions button {
+  font-size: 1rem;
   margin: var(--space-6) 0;
   width: 100%;
 }
 
 .count {
-  background: var(--color-pill-bg-accent);
-  border: 1px solid var(--color-text-accent);
+  background: var(--color-bg);
+  border: 1px solid var(--color-member-dark-1);
   border-radius: var(--radius-rounded);
+  color: var(--color-member-dark-1);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   text-align: center;
-  margin: 0 auto var(--space-2);
+  margin: 0 auto;
   width: fit-content;
   padding: var(--space-1) var(--space-4);
+  position: relative;
+  top: -46px;
+}
+
+.count span {
   color: var(--color-text-accent);
+  font-size: 0.825rem;
+  font-weight: 600;
 }
 </style>
