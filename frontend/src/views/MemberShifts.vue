@@ -105,9 +105,10 @@ onMounted(load)
                 formatTimeRange(shift.starts_at, shift.ends_at)
               }}</span>
             </span>
-            <span v-if="shift.assigned" class="tag"
-              >Yours · +{{ shift.weight }} points</span
-            >
+            <div v-if="shift.assigned" class="points flex flex-col items-end text-right">
+              <span>Your shift</span>
+              <span>+{{ shift.weight }} points</span>
+            </div>
             <span v-else class="points">+{{ shift.weight }} points</span>
           </label>
         </fieldset>
@@ -194,11 +195,6 @@ legend {
   border-color: var(--color-text-accent);
 }
 
-.shift.assigned {
-  background: var(--color-surface);
-  cursor: default;
-}
-
 .shift-main {
   display: flex;
   flex-direction: column;
@@ -216,6 +212,22 @@ legend {
   font-size: 0.875rem;
   font-weight: 400;
   color: var(--color-text-muted);
+}
+
+.shift.assigned:has(input:checked) {
+  background: var(--color-dark-gradient);
+  border-color: var(--color-member-dark-1);
+  cursor: default;
+}
+
+.shift.assigned .shift-name,
+.shift.assigned .shift-time,
+.shift.assigned .points {
+  color: var(--color-bg);
+}
+
+.shift.assigned input:disabled {
+  display: none;
 }
 
 .points {
