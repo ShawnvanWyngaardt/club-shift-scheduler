@@ -1,5 +1,6 @@
 import '@fontsource-variable/montserrat'
 import '@fontsource/titan-one'
+import '@fontsource-variable/roboto-mono'
 import './assets/main.css'
 import './assets/utilities.scss'
 
