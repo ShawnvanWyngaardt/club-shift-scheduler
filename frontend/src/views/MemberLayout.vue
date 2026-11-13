@@ -120,6 +120,7 @@ onMounted(load)
   margin: 0;
 }
 .tabs {
+  border-bottom: 1px solid var(--color-border-dark);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);

@@ -1,0 +1,51 @@
+/* ==========================================================================
+   Spacing utilities (Tailwind-style names)
+   Usage: <section class="mb-8 px-4">
+   m = margin, p = padding
+   t / r / b / l = one side, x = left + right, y = top + bottom, none = all sides
+   Numbers map to the --space-* tokens in main.css. Margins also get -auto.
+   ========================================================================== */
+
+// Keys must match the --space-* tokens in main.css (0 is a plain zero).
+$spacing-scale: (0, 1, 2, 3, 4, 6, 7, 8);
+
+// Class suffix → which sides it sets.
+$sides: (
+  '': (''),
+  't': ('-top'),
+  'r': ('-right'),
+  'b': ('-bottom'),
+  'l': ('-left'),
+  'x': ('-left', '-right'),
+  'y': ('-top', '-bottom'),
+);
+
+@function space($step) {
+  @if $step == 0 {
+    @return 0;
+  }
+  @return var(--space-#{$step});
+}
+
+@mixin spacing-utilities($prefix, $property, $with-auto: false) {
+  @each $side, $suffixes in $sides {
+    @each $step in $spacing-scale {
+      .#{$prefix}#{$side}-#{$step} {
+        @each $suffix in $suffixes {
+          #{$property}#{$suffix}: space($step);
+        }
+      }
+    }
+
+    @if $with-auto {
+      .#{$prefix}#{$side}-auto {
+        @each $suffix in $suffixes {
+          #{$property}#{$suffix}: auto;
+        }
+      }
+    }
+  }
+}
+
+@include spacing-utilities('m', 'margin', $with-auto: true);
+@include spacing-utilities('p', 'padding');
