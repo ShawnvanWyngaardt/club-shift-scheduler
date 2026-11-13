@@ -1,85 +1,58 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ApiError, demoApi } from '@/api'
-import { rememberDemo } from '@/demo'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { ApiError, demoApi } from "@/api";
+import { rememberDemo } from "@/demo";
+import HeroSection from "./HeroSection.vue";
 
-const router = useRouter()
-const starting = ref(false)
-const error = ref('')
+const router = useRouter();
+const starting = ref(false);
+const error = ref("");
 
 async function startDemo() {
-  starting.value = true
-  error.value = ''
+  starting.value = true;
+  error.value = "";
   try {
-    const demo = await demoApi.start()
-    rememberDemo(demo)
+    const demo = await demoApi.start();
+    rememberDemo(demo);
     await router.push({
-      name: 'schedule',
+      name: "schedule",
       params: { clubId: String(demo.club_id), token: demo.coordinator_token },
-    })
+    });
   } catch (e) {
     error.value =
-      e instanceof ApiError ? e.message : 'Could not reach the server. Please try again.'
-    starting.value = false
+      e instanceof ApiError ? e.message : "Could not reach the server. Please try again.";
+    starting.value = false;
   }
 }
 </script>
 
 <template>
-  <main class="landing">
-    <section class="hero">
-      <p class="eyebrow">Club Shift Scheduler</p>
-      <h1>Fair volunteer shifts for amateur sports clubs</h1>
-      <p class="lead">
-        Members tick the shifts they can do. The app shares them out fairly, so the same few people
-        stop doing everything.
-      </p>
-      <div class="cta">
-        <button type="button" :disabled="starting" @click="startDemo">
-          {{ starting ? 'Setting up your demo…' : 'Try the demo' }}
-        </button>
-        <a
-          class="link-button button-secondary"
-          href="https://github.com/ShawnvanWyngaardt/club-shift-scheduler"
-        >
-          See the code on GitHub
-        </a>
-      </div>
-      <p v-if="starting" class="muted note">
-        The first visit can take up to a minute while the server wakes up.
-      </p>
-      <p v-if="error" class="error note" role="alert">{{ error }}</p>
-      <p class="muted note">
-        Your demo is a private club with sample members, deleted after 24 hours. No sign-up.
-      </p>
-      <p class="muted note">
-        Running a real club? <RouterLink to="/start">Start your own</RouterLink>.
-      </p>
-    </section>
+  <HeroSection />
 
+  <main class="landing">
     <section aria-labelledby="how-it-works">
       <h2 id="how-it-works">How it works</h2>
       <ol class="steps">
         <li>
           <h3>Members say when they can help</h3>
           <p>
-            Everyone gets a personal link. No account and no app to install: open it, tick the
-            shifts that suit you, and save.
+            Everyone gets a personal link. No account and no app to install: open it, tick
+            the shifts that suit you, and save.
           </p>
         </li>
         <li>
           <h3>The schedule is shared out fairly</h3>
           <p>
-            The coordinator generates a schedule in one click. Members with the fewest points this
-            season go first, and any gaps show up straight away.
+            The coordinator generates a schedule in one click. Members with the fewest
+            points this season go first, and any gaps show up straight away.
           </p>
         </li>
         <li>
           <h3>Points keep it fair next time</h3>
           <p>
-            Every completed shift earns points, and the less popular the shift, the more it's worth.
-            Next round, the people who did the most are asked less.
+            Every completed shift earns points, and the less popular the shift, the more
+            it's worth. Next round, the people who did the most are asked less.
           </p>
         </li>
       </ol>
@@ -88,8 +61,9 @@ async function startDemo() {
     <section class="about" aria-labelledby="about">
       <h2 id="about">About this project</h2>
       <p>
-        Built by Shawn van Wyngaardt as a hands-on way to learn Python, with FastAPI, Vue 3 and
-        PostgreSQL. The plans, decisions and a day-by-day build journal are in the repository.
+        Built by Shawn van Wyngaardt as a hands-on way to learn Python, with FastAPI, Vue
+        3 and PostgreSQL. The plans, decisions and a day-by-day build journal are in the
+        repository.
       </p>
       <p class="links">
         <a
@@ -102,6 +76,17 @@ async function startDemo() {
         <a href="/docs" target="_blank">API documentation</a>
       </p>
     </section>
+    <div class="cta">
+      <button type="button" :disabled="starting" @click="startDemo">
+        {{ starting ? "Setting up your demo…" : "Try the demo" }}
+      </button>
+      <a
+        class="link-button button-secondary"
+        href="https://github.com/ShawnvanWyngaardt/club-shift-scheduler"
+      >
+        See the code on GitHub
+      </a>
+    </div>
   </main>
 </template>
 
