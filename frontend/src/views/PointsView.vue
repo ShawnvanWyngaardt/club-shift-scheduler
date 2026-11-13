@@ -49,7 +49,7 @@ onMounted(load)
     </section>
 
     <template v-else>
-      <section class="block">
+      <section class="mb-6">
         <h2>Who is next in line</h2>
         <p class="muted">
           Fewest points go first when you fill the next schedule. Members only see this list
@@ -71,7 +71,7 @@ onMounted(load)
         </table>
       </section>
 
-      <section class="block">
+      <section class="mb-6">
         <h2>History</h2>
         <p v-if="ledger?.entries.length === 0" class="muted">
           No points yet. Points are added when you record an outcome.
@@ -102,9 +102,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.block {
-  margin-bottom: var(--space-6);
-}
 h2 {
   font-size: 1.25rem;
   margin: 0 0 var(--space-2);

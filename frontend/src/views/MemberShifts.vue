@@ -68,7 +68,7 @@ onMounted(load)
     </section>
 
     <template v-else>
-      <section class="explain">
+      <section class="mb-8">
         <h2>Which shifts could you do?</h2>
         <p class="descriptive">
           Tick every upcoming shift you could help with, then Save. This indicates your
@@ -152,16 +152,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.explain {
-  margin-bottom: var(--space-8);
-}
-
-.descriptive {
-  color: var(--color-text);
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
 .day {
   border: 0;
   margin: 0 0 var(--space-6);
