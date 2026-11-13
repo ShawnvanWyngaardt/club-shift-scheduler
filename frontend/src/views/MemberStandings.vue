@@ -37,11 +37,13 @@ onMounted(load)
     </section>
 
     <template v-else>
-      <h2>Points in {{ profile?.club_name }}</h2>
-      <p class="muted intro">
-        Everyone's points this season, so you can see the work is shared. Whoever has the fewest
-        points goes first for the next shift.
-      </p>
+      <section class="mb-8">
+        <h2>Points in {{ profile?.club_name }}</h2>
+        <p class="descriptive mb-4">
+          Everyone's points this season, so you can see the work is shared. Whoever has
+          the fewest points goes first for the next shift.
+        </p>
+      </section>
       <ul class="row-list" aria-label="Points per member">
         <li
           v-for="row in rows"
@@ -49,7 +51,9 @@ onMounted(load)
           :class="{ me: isMe(row.member_id) }"
           :aria-current="isMe(row.member_id) ? 'true' : undefined"
         >
-          <span> {{ row.name }}<span v-if="isMe(row.member_id)" class="muted"> (you)</span> </span>
+          <span>
+            {{ row.name }}<span v-if="isMe(row.member_id)" class="muted"> (you)</span>
+          </span>
           <strong>{{ row.balance }}</strong>
         </li>
       </ul>
@@ -58,13 +62,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-h2 {
-  font-size: 1.25rem;
-  margin: 0 0 var(--space-2);
-}
-.intro {
-  margin: 0 0 var(--space-4);
-}
 .row-list li.me {
   border-color: var(--color-accent);
   border-width: 2px;

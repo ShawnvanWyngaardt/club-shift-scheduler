@@ -53,10 +53,11 @@ onMounted(load)
     </section>
 
     <template v-else>
-      <section class="block">
+      <section class="mb-8">
         <h2>Coming up</h2>
         <p v-if="upcoming.length === 0" class="muted">
-          Nothing assigned yet. Your coordinator publishes the schedule once everyone has answered.
+          Nothing assigned yet. Your coordinator publishes the schedule once everyone has
+          answered.
         </p>
         <ul v-else class="row-list">
           <li v-for="a in upcoming" :key="a.id" class="stack">
@@ -68,21 +69,22 @@ onMounted(load)
               {{ formatDay(a.starts_at) }}, {{ formatTimeRange(a.starts_at, a.ends_at) }}
             </p>
             <p class="why">
-              <strong>Why you:</strong> you said you could do this shift, and members with the
-              fewest points go first.
+              <strong>Why you:</strong> you said you could do this shift, and members with
+              the fewest points go first.
             </p>
           </li>
         </ul>
       </section>
 
-      <section v-if="past.length" class="block">
+      <section v-if="past.length" class="mb-6">
         <h2>Past shifts</h2>
         <ul class="row-list">
           <li v-for="a in past" :key="a.id">
             <div>
               <strong>{{ a.shift_type }}</strong>
               <p class="muted">
-                {{ formatDay(a.starts_at) }}, {{ formatTimeRange(a.starts_at, a.ends_at) }}
+                {{ formatDay(a.starts_at) }},
+                {{ formatTimeRange(a.starts_at, a.ends_at) }}
               </p>
             </div>
             <span :class="outcome(a).tone">{{ outcome(a).text }}</span>
@@ -90,7 +92,7 @@ onMounted(load)
         </ul>
       </section>
 
-      <section v-if="history.length" class="block">
+      <section v-if="history.length" class="mb-6">
         <h2>How you got your points</h2>
         <ul class="row-list">
           <li v-for="(entry, index) in history" :key="index">
@@ -104,13 +106,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.block {
-  margin-bottom: var(--space-6);
-}
-h2 {
-  font-size: 1.25rem;
-  margin: 0 0 var(--space-3);
-}
 .row-list li.stack {
   flex-direction: column;
   align-items: flex-start;
