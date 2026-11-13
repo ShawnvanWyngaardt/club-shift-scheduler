@@ -29,8 +29,8 @@ async function startDemo() {
 
 <template>
   <HeroSection />
-
   <main class="landing">
+    <p class="muted mt-6 mb-8">--- <em>[WIP] Redesign in progress</em> ---</p>
     <section aria-labelledby="how-it-works">
       <h2 id="how-it-works">How it works</h2>
       <ol class="steps">
