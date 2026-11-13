@@ -31,7 +31,7 @@ async function startDemo() {
 <template>
   <HeroSection />
   <HowItWorks />
-  <main>
+  <main class="landing">
     <section class="about" aria-labelledby="about">
       <h2 id="about">About this project</h2>
       <p>
@@ -70,24 +70,6 @@ async function startDemo() {
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
 }
-.hero {
-  padding: var(--space-6) 0;
-  margin-bottom: var(--space-6);
-}
-.eyebrow {
-  margin: 0 0 var(--space-2);
-  color: var(--color-accent);
-  font-weight: 600;
-}
-h1 {
-  font-size: clamp(2rem, 6vw, 2.75rem);
-  line-height: 1.15;
-  margin-bottom: var(--space-4);
-}
-.lead {
-  font-size: 1.125rem;
-  margin: 0 0 var(--space-6);
-}
 .cta {
   display: flex;
   flex-wrap: wrap;
@@ -118,32 +100,6 @@ h2 {
   display: grid;
   gap: var(--space-4);
 }
-.steps li {
-  counter-increment: step;
-  position: relative;
-  padding-left: 48px;
-}
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--color-accent);
-  color: #ffffff;
-  font-weight: 600;
-}
-.steps h3 {
-  margin: 0 0 var(--space-2);
-  font-size: 1.0625rem;
-}
-.steps p {
-  margin: 0;
-}
 .about {
   padding-top: var(--space-6);
   border-top: 1px solid var(--color-border);
@@ -156,9 +112,6 @@ h2 {
 .links a {
   color: var(--color-accent);
   font-weight: 600;
-}
-.note {
-  margin: var(--space-3) 0 0;
 }
 .error {
   color: var(--color-error);
