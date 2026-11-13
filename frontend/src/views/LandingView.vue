@@ -76,6 +76,17 @@ async function startDemo() {
         <a href="/docs" target="_blank">API documentation</a>
       </p>
     </section>
+    <div class="cta">
+      <button type="button" :disabled="starting" @click="startDemo">
+        {{ starting ? "Setting up your demo…" : "Try the demo" }}
+      </button>
+      <a
+        class="link-button button-secondary"
+        href="https://github.com/ShawnvanWyngaardt/club-shift-scheduler"
+      >
+        See the code on GitHub
+      </a>
+    </div>
   </main>
 </template>
 
