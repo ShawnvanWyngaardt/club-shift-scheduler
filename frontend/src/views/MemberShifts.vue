@@ -138,7 +138,7 @@ onMounted(load)
             >
               <IconAlertCircle :size="24" color="var(--color-error)" />
               <span
-                >{{ saveMessage }} Your selections are kept, so please try again.</span
+                >{{ saveMessage }}. Your selections are kept, so please try again.</span
               >
             </div>
           </Transition>
@@ -230,12 +230,16 @@ legend {
 .actions {
   position: sticky;
   bottom: 0;
-  padding: var(--space-7);
+  padding: 0 var(--space-7) var(--space-7);
   background: var(--color-bg);
   border-top: 3px solid var(--color-member-dark-1);
   box-shadow: 0px -40px 40px var(--color-bg);
   font-size: 0.875rem;
   line-height: 1.35;
+}
+
+.actions span {
+  color: var(--color-text);
 }
 
 .actions button {
@@ -256,7 +260,7 @@ legend {
   width: fit-content;
   padding: var(--space-1) var(--space-4);
   position: relative;
-  bottom: var(--space-8);
+  bottom: var(--space-4);
 }
 
 .count span {
@@ -264,13 +268,16 @@ legend {
   font-size: 0.825rem;
   font-weight: 600;
 }
+
 /* Save message: fade + slight rise in, quicker fade out */
 .save-msg-enter-active {
   transition: opacity 250ms ease-out, transform 250ms ease-out;
 }
+
 .save-msg-leave-active {
   transition: opacity 150ms ease-in, transform 150ms ease-in;
 }
+
 .save-msg-enter-from,
 .save-msg-leave-to {
   opacity: 0;
