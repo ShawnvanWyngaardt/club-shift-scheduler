@@ -61,7 +61,6 @@ const { phase, isBusy, startDemo } = useStartDemo();
   --hero-ember: #ff7a18;
   --hero-amber: #f58a07;
   --font-display: "Titan One", system-ui, sans-serif;
-  --font-mono: "Roboto Mono", ui-monospace, monospace;
 
   background: var(--hero-bg);
   color: var(--hero-ink);
