@@ -6,7 +6,7 @@ import HowItWorks from "./HowItWorks.vue";
 
 <template>
   <section class="top-banner">
-    <div class="flex justify-center align-items gap-1">
+    <div class="flex justify-center items-center gap-1">
       <img :src="lightbulbIcon" width="28" height="28" />
       <p>Redesign Work In Progress</p>
     </div>
