@@ -3,6 +3,7 @@ import wave from "@/assets/landing/how-it-works-wave.svg";
 import stepTick from "@/assets/landing/step-1-tick.png";
 import stepShare from "@/assets/landing/step-2-share.png";
 import stepPoints from "@/assets/landing/step-3-points.png";
+import ProjectAbout from "@/components/landing/ProjectAbout.vue";
 
 const steps = [
   {
@@ -52,6 +53,8 @@ const steps = [
             <img :src="step.image" :alt="step.alt" class="step-img" loading="lazy" />
           </li>
         </ol>
+        <!-- About & Footer: Placed here to make use of the same art and line design -->
+        <ProjectAbout />
       </div>
     </div>
   </section>
