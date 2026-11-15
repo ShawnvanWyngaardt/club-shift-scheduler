@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { computed, ref } from 'vue'
 import { ApiError, coordinatorApi, type AssignmentDetail, type Candidate } from '@/api'
 
@@ -64,7 +65,7 @@ function give() {
 }
 
 function label(c: Candidate) {
-  return `${c.name} · ${c.points} points${c.busy ? ' · busy at that time' : ''}`
+  return `${c.name} · ${points(c.points)}${c.busy ? ' · busy at that time' : ''}`
 }
 </script>
 

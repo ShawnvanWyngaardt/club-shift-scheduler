@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { computed, ref } from 'vue'
 import { ApiError, coordinatorApi, type Candidate } from '@/api'
 
@@ -57,7 +58,7 @@ async function assign() {
 }
 
 const optionText = (c: Candidate) =>
-  `${c.name} · ${c.points} pts${c.busy ? ' · busy at that time' : ''}`
+  `${c.name} · ${points(c.points, { short: true })}${c.busy ? ' · busy at that time' : ''}`
 </script>
 
 <template>
