@@ -1,5 +1,7 @@
 # Club Shift Scheduler
 
+[![Club Shift Scheduler: fair shifts, without the group chat. Try the live demo.](docs/images/v0.3.0/landing-hero.png)](https://club-shift-scheduler.onrender.com)
+
 Amateur sports clubs in the Netherlands depend on members to volunteer their time during the season, on match days, at practices and at social events. That means helping with setup, transport, the bar and horeca at the clubhouse, and even organising children's games.
 
 Work in progress, started week of 19 October 2026. Built with Python (FastAPI), Vue 3 and the support of many hot and cold beverages.
