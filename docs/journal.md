@@ -2,6 +2,52 @@
 
 One entry per working day. Each entry: what I built, one decision and why, what went wrong, what I learned.
 
+## Start here
+
+If you only read a few entries, read these:
+
+- [Sun 25 Oct: the real test](#sun-25-oct-the-real-test): the first user test, and what she understood differently from what I built.
+- [Tue 3 Nov: the member side answers back](#tue-3-nov-the-member-side-answers-back): turning those findings into changes, finding by finding.
+- [Wed 4 Nov: v0.2.0 out, and a privacy gap closed](#wed-4-nov-v020-out-and-a-privacy-gap-closed): finding that anyone could read a club's data, and fixing it as the first patch.
+- [Wed 11 Nov: a user test with several people finds a real bug](#wed-11-nov-a-user-test-with-several-people-finds-a-real-bug): a rule with a passing test that was still wrong.
+
+**Where it stands:** v0.2.1 is live. The v0.3 redesign is under way: the landing page on desktop and the member's My availability screen are done; My shifts, Club points, the coordinator screens and the landing page on mobile are next.
+
+## Contents
+
+**Week 1: the first build**
+
+- [Sun 18 Oct 2026: choosing and planning](#sun-18-oct-2026-choosing-and-planning)
+- [Mon 19 Oct 2026: Python basics, first API, first deploy](#mon-19-oct-2026-python-basics-first-api-first-deploy)
+- [Tue 20 Oct 2026: the solver](#tue-20-oct-2026-the-solver)
+- [Wed 21 Oct: availability, scheduling and the ledger](#wed-21-oct-availability-scheduling-and-the-ledger)
+- [Thu 22 Oct: Postgres, security and a busy day](#thu-22-oct-postgres-security-and-a-busy-day)
+- [Fri 23 Oct: designing the frontend, finishing the backend](#fri-23-oct-designing-the-frontend-finishing-the-backend)
+- [Sat 24 Oct: going live with the frontend](#sat-24-oct-going-live-with-the-frontend)
+- [Sun 25 Oct: the real test](#sun-25-oct-the-real-test)
+- [Looking back on the week](#looking-back-on-the-week)
+
+**v0.2: migrations, a demo, real clubs and privacy**
+
+- [Wed 28 Oct: v0.2.0 begins, and production was closer than I thought](#wed-28-oct-v020-begins-and-production-was-closer-than-i-thought)
+- [Thu 29 Oct: from migrations to a demo anyone can try](#thu-29-oct-from-migrations-to-a-demo-anyone-can-try)
+- [Fri 30 Oct: real clubs without the seed script](#fri-30-oct-real-clubs-without-the-seed-script)
+- [Mon 2 Nov: setup complete, and linting that bites](#mon-2-nov-setup-complete-and-linting-that-bites)
+- [Tue 3 Nov: the member side answers back](#tue-3-nov-the-member-side-answers-back)
+- [Wed 4 Nov: v0.2.0 out, and a privacy gap closed](#wed-4-nov-v020-out-and-a-privacy-gap-closed)
+- [Thu 5 Nov: v0.2.1 live, and a look at what's next](#thu-5-nov-v021-live-and-a-look-at-whats-next)
+
+**v0.3: the redesign**
+
+- [Tue 10 Nov: into the redesign](#tue-10-nov-into-the-redesign)
+- [Wed 11 Nov: a user test with several people finds a real bug](#wed-11-nov-a-user-test-with-several-people-finds-a-real-bug)
+- [Thu 12 Nov: My availability, finished and live](#thu-12-nov-my-availability-finished-and-live)
+- [Fri 13 Nov: the new hero and How it works](#fri-13-nov-the-new-hero-and-how-it-works)
+- [Sat 14 Nov: the About footer](#sat-14-nov-the-about-footer)
+- [Sun 15 Nov: plurals, a README picture and an SVG experiment](#sun-15-nov-plurals-a-readme-picture-and-an-svg-experiment)
+
+---
+
 ## Sun 18 Oct 2026: choosing and planning
 
 - **Planning & Setup:** Started planning on project, decided what to build and why. Also made sure everything was set up correctly before I got started.
@@ -246,3 +292,40 @@ One entry per working day. Each entry: what I built, one decision and why, what 
 - **Idea:** a coordinator view of everyone's availability, as a grid of members by shifts, which would also show at a glance why a slot is empty. For the coordinator redesign.
 - **Left behind:** a test club, "Repro test (delete me)", in the live database.
 - **Learned:** the old maximum had a passing test. The test proved the rule did what it said, not that the rule was right. Real people across four weeks found what a three-shift unit test couldn't.
+
+## Thu 12 Nov: My availability, finished and live
+
+- **Built:** the rest of the My availability redesign. A shift you've been given now has its own styling, so it's clear which ones are already yours.
+- **Shipped:** merged and deployed. The member side has its first redesigned screen live.
+- **Still to do:** loading and error states for My availability. The happy path looks finished; the slow and failing paths still use the old look.
+- **Scoped:** the landing page. A shorter top section, one main call to action ("Try the demo"), an image of the app instead of a video for now, and a waiting message for the slow first load. "Start your own club" stays, but moves below the fold.
+- **Decision:** a picture first, a short video later. The image is enough to show what the app does, and a video is more work to keep in step with a design that is still changing.
+
+## Fri 13 Nov: the new hero and How it works
+
+- **Set up:** Sass with a small set of utility classes, plus a few mobile fixes on the way.
+- **Added:** Titan One for display headings and Roboto Mono for small labels, installed in the project rather than loaded from a font service.
+- **Built:** the hero from my own Figma design: headline "Fair shifts, without the group chat.", the phone image and one button that starts a demo.
+- **Built:** `useStartDemo`, a composable that holds everything about starting a demo: a "waking up the server" message after 4 seconds, "demo is full" on a 503, and a general error otherwise. The old `startDemo` function in the landing page went, since the composable replaces it.
+- **Built:** How it works: three steps on cards over a plum to blue panel, with the retro wave and stripes as artwork. The stripes are a CSS gradient instead of an image, and the artwork scales with container query units, so the wave, stripes and panel stay lined up at every width.
+- **Went wrong:** my first build of the hero came from a PDF export of the design, and the measurements were off. The PDF lost the fonts and rounded the values. Rebuilt it from the Figma link, which gives the exact sizes, colours and spacing.
+- **Merged:** two Dependabot updates for the backend (dnspython and opentelemetry-api).
+- **Learned:** an export is a picture of the design, not the design. When the source is available, build from the source.
+
+## Sat 14 Nov: the About footer
+
+- **Built:** an About section at the bottom of the How it works panel: links to how it was built and to the API docs, GitHub and LinkedIn icons, a short line on what the project is, and a copyright line.
+- **Decision:** all rights reserved, with "Source available on GitHub". The code is public so people can read it, but I'm not giving permission to reuse it. An open source licence can come later if I want one; going the other way is harder.
+- **Went wrong:** the icons showed as squares. I'd used the SVGs as a CSS mask so they could take the link colour, and the mask didn't apply. Switched to plain images, which work and are easier to reason about.
+- **Went wrong:** the API docs link gave an error when running locally. The Vite dev server didn't pass `/docs` and `/openapi.json` on to the backend, so the frontend tried to handle them. Added both to the proxy. On Render this was never broken, because the backend serves everything there.
+- **Added:** a lightbulb icon for the "redesign in progress" banner. [Check: was this today or 15 Nov?]
+
+## Sun 15 Nov: plurals, a README picture and an SVG experiment
+
+- **Reviewed:** where the redesign stands. Landing on desktop is done (hero, How it works, About) and My availability is done. Left: My shifts and Club points for members, every coordinator screen (Schedule first), and the landing on mobile.
+- **Understood:** why the landing can't show its own "waking up" message after a quiet spell. While the Render service sleeps, Render answers with its own loading page, so none of my frontend loads until the backend is awake. The message in the hero only helps when the frontend is up and the database is the slow part. The real fix is to host the frontend separately as static files, so it loads straight away and can explain the wait. Parked for after the redesign.
+- **Shipped:** one plural helper for every count (PR #56): "1 point", "2 points", "+1 point", using `Intl.PluralRules`, so Dutch can use its own rules later. This closes the "+1 points" and "1 pts" found on 7 Nov.
+- **Added:** a picture of the new hero at the top of the README.
+- **Went wrong:** the picture didn't show on GitHub. The file was called `.png.png`, because Windows hid the first extension.
+- **Tried:** letting AI edit an SVG: art lines rising from How it works to the top of the page. Three versions. The first went past the edge of the panel, the second added shapes I didn't want, and the third was lines only, with a mask on the panel. Saved it for the mobile landing work instead of finishing it now.
+- **Learned:** AI can edit SVG paths, but only with very exact instructions, and every round needs checking by eye. It's faster for generating curves than for fine-tuning them.
