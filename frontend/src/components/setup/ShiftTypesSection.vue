@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { ref } from 'vue'
 import { ApiError, coordinatorApi, type ShiftTypeInfo } from '@/api'
 
@@ -82,7 +83,7 @@ async function remove(shiftType: ShiftTypeInfo) {
       <li v-for="shiftType in shiftTypes" :key="shiftType.id">
         <span>
           <strong>{{ shiftType.name }}</strong>
-          <span class="muted"> · +{{ shiftType.weight }} points</span>
+          <span class="muted"> · {{ points(shiftType.weight, { sign: true }) }}</span>
         </span>
         <button type="button" class="button-danger" @click="remove(shiftType)">Remove</button>
         <p v-if="rowError?.id === shiftType.id" class="error row-error" role="alert">

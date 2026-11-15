@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { computed, ref } from 'vue'
 import type { DemoClub } from '@/api'
 import { memberUrl } from '@/links'
@@ -46,7 +47,7 @@ async function copyLink(token: string) {
       <ul class="members">
         <li v-for="member in others" :key="member.token">
           <a :href="memberUrl(member.token)" target="_blank" rel="noopener">{{ member.name }}</a>
-          <span class="muted">{{ member.points }} pts</span>
+          <span class="muted">{{ points(member.points, { short: true }) }}</span>
           <button type="button" class="button-secondary small" @click="copyLink(member.token)">
             {{ copied === member.token ? 'Copied' : 'Copy link' }}
           </button>

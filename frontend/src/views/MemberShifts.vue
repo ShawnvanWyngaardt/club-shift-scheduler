@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points, word } from '@/format'
 import { computed, onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile, type MyShift } from '@/api'
 import { formatTimeRange, groupByDay } from '@/time'
@@ -107,15 +108,15 @@ onMounted(load)
             </span>
             <div v-if="shift.assigned" class="points flex flex-col items-end text-right">
               <span>Your shift</span>
-              <span>+{{ shift.weight }} points</span>
+              <span>{{ points(shift.weight, { sign: true }) }}</span>
             </div>
-            <span v-else class="points">+{{ shift.weight }} points</span>
+            <span v-else class="points">{{ points(shift.weight, { sign: true }) }}</span>
           </label>
         </fieldset>
 
         <div class="actions">
           <p class="count">
-            Available for <span>{{ ticked }} of {{ shifts.length }}</span> shifts.
+            Available for <span>{{ ticked }} of {{ shifts.length }}</span> {{ word(shifts.length, 'shift') }}.
           </p>
           <Transition name="save-msg" mode="out-in">
             <div

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { computed, onMounted, ref } from 'vue'
 import { api, type LedgerEntry, type MemberProfile, type MyAssignment } from '@/api'
 import { formatDay, formatTimeRange } from '@/time'
@@ -33,8 +34,8 @@ const past = computed(() =>
 )
 
 function outcome(a: MyAssignment) {
-  if (a.status === 'done') return { text: `Done · +${a.weight} points`, tone: 'ok' }
-  if (a.status === 'no_show') return { text: `No-show · −${a.weight} points`, tone: 'error' }
+  if (a.status === 'done') return { text: `Done · ${points(a.weight, { sign: true })}`, tone: 'ok' }
+  if (a.status === 'no_show') return { text: `No-show · ${points(-a.weight, { sign: true })}`, tone: 'error' }
   return { text: 'Waiting for the coordinator to record it', tone: 'muted' }
 }
 
@@ -63,7 +64,7 @@ onMounted(load)
           <li v-for="a in upcoming" :key="a.id" class="stack">
             <div class="line">
               <strong>{{ a.shift_type }}</strong>
-              <span class="points">+{{ a.weight }} points when done</span>
+              <span class="points">{{ points(a.weight, { sign: true }) }} when done</span>
             </div>
             <p class="muted">
               {{ formatDay(a.starts_at) }}, {{ formatTimeRange(a.starts_at, a.ends_at) }}

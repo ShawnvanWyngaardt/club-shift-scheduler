@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { points } from '@/format'
 import { computed, onMounted, ref } from 'vue'
 import {
   ApiError,
@@ -76,7 +77,7 @@ async function publish() {
 
 const busy = computed(() => phase.value === 'generating' || phase.value === 'publishing')
 const withPoints = (memberId: number, name: string) =>
-  `${name} (${balances.value.get(memberId) ?? 0} pts)`
+  `${name} (${points(balances.value.get(memberId) ?? 0, { short: true })})`
 
 /** Who already holds each shift, from earlier publishes. */
 const holders = computed(() => {
