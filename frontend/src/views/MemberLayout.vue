@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { api, ApiError, type MemberProfile } from '@/api'
 import NotFound from '@/views/NotFound.vue'
 
@@ -19,6 +20,39 @@ async function load() {
 }
 
 onMounted(load)
+
+/*
+ * The sliding tab indicator. One bar for the whole nav, moved under the active
+ * tab. This layout stays mounted when the tab changes (only the RouterView
+ * swaps), so the bar survives and CSS can animate it from the old tab to the new one.
+ */
+const route = useRoute()
+const tabs = ref<HTMLElement | null>(null)
+const bar = ref({ x: 0, y: 0, width: 0 })
+const animate = ref(false) // off for the first placement, so it doesn't slide in from the left
+
+function moveBar() {
+  const active = tabs.value?.querySelector<HTMLElement>('.router-link-exact-active')
+  if (!tabs.value || !active) return
+  const nav = tabs.value.getBoundingClientRect()
+  const tab = active.getBoundingClientRect()
+  bar.value = { x: tab.left - nav.left, y: tab.bottom - nav.top - 4, width: tab.width }
+}
+
+// Re-measure when the tab changes, and when the nav appears after loading.
+watch([() => route.name, tabs], async () => {
+  await nextTick() // wait for the new active class (and its bolder, wider text)
+  moveBar()
+  requestAnimationFrame(() => (animate.value = true))
+})
+
+// Re-measure when the nav changes size: window resize, tabs wrapping, fonts loading.
+const resize = new ResizeObserver(moveBar)
+watch(tabs, (el, old) => {
+  if (old) resize.unobserve(old)
+  if (el) resize.observe(el)
+})
+onBeforeUnmount(() => resize.disconnect())
 </script>
 
 <template>
@@ -54,7 +88,16 @@ onMounted(load)
       </div>
     </header>
     <div class="page tab-head">
-      <nav aria-label="Your pages" class="tabs">
+      <nav ref="tabs" aria-label="Your pages" class="tabs">
+        <span
+          class="tab-bar"
+          :class="{ animate }"
+          :style="{
+            width: `${bar.width}px`,
+            transform: `translate(${bar.x}px, ${bar.y}px)`,
+          }"
+          aria-hidden="true"
+        ></span>
         <div>
           <RouterLink :to="{ name: 'member', params: { token } }"
             >My availability</RouterLink
@@ -120,6 +163,7 @@ onMounted(load)
   margin: 0;
 }
 .tabs {
+  position: relative; /* the bar is placed relative to the nav */
   border-bottom: 1px solid var(--color-border-dark);
   display: flex;
   flex-wrap: wrap;
@@ -135,10 +179,28 @@ onMounted(load)
   padding: 0 var(--space-3);
   color: var(--color-member-dark-1);
   text-decoration: none;
-  border-bottom: 4px solid transparent;
+  border-bottom: 4px solid transparent; /* keeps the room the bar sits in */
 }
 .tabs a.router-link-exact-active {
   font-weight: 600;
-  border-color: var(--color-accent-secondary);
+}
+
+.tab-bar {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 5px;
+  background: var(--color-cta-primary-gradient);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+.tab-bar.animate {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-bar.animate {
+    transition: none;
+  }
 }
 </style>
