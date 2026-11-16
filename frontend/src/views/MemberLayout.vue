@@ -182,7 +182,7 @@ onBeforeUnmount(() => resize.disconnect())
   border-bottom: 4px solid transparent; /* keeps the room the bar sits in */
 }
 .tabs a.router-link-exact-active {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .tab-bar {

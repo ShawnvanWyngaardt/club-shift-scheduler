@@ -37,7 +37,7 @@ function change(a: MyAssignment) {
 
 function outcome(a: MyAssignment) {
   if (a.status === 'done') return { label: 'Done', tone: 'ok' }
-  if (a.status === 'no_show') return { label: 'No-show', tone: 'error' }
+  if (a.status === 'no_show') return { label: 'Missed', tone: 'missed' }
   return { label: 'Waiting to be recorded', tone: 'waiting' }
 }
 
@@ -59,22 +59,27 @@ onMounted(load)
 
         <div v-if="upcoming.length === 0 && history.length" class="empty">
           <h3>No new shifts for you yet</h3>
-          <p class="muted">
+          <p class="descriptive">
             When your coordinator adds new shifts, tick the ones you can do in
-            <RouterLink :to="{ name: 'member', params: { token } }">My availability</RouterLink>.
-            Your next shifts show up here once the schedule is published.
+            <RouterLink :to="{ name: 'member', params: { token } }"
+              >My availability</RouterLink
+            >. Your next shifts show up here once the schedule is published.
           </p>
         </div>
 
         <div v-else-if="upcoming.length === 0" class="empty">
           <h3>No shifts for you yet</h3>
-          <p class="muted">Your shifts show up here once your coordinator publishes the schedule.</p>
+          <p class="descriptive">
+            Your shifts show up here once your coordinator publishes the schedule.
+          </p>
 
-          <h4>What happens next</h4>
+          <h3 class="mt">What happens next</h3>
           <ol class="steps">
             <li>
               You tick the shifts you can do in
-              <RouterLink :to="{ name: 'member', params: { token } }">My availability</RouterLink>.
+              <RouterLink :to="{ name: 'member', params: { token } }"
+                >My availability</RouterLink
+              >.
             </li>
             <li>Your coordinator shares the shifts out and publishes the schedule.</li>
             <li>Your shifts appear here, with the points each one earns.</li>
@@ -82,27 +87,41 @@ onMounted(load)
 
           <p class="rule">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2" />
-              <path d="M12 11v6M12 7.5v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+              <circle
+                cx="12"
+                cy="12"
+                r="9.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M12 11v6M12 7.5v.01"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+              />
             </svg>
             <span>
-              Shifts go to members who said they could do them, and those with the fewest points
-              go first.
+              Shifts go to members who said they could do them, and those with the fewest
+              points go first.
             </span>
           </p>
         </div>
 
         <template v-else>
-          <p class="descriptive">
-            You're on these because you said you could do them, and members with the fewest
-            points go first. Each shift shows the points you'll earn once it's done.
+          <p class="descriptive mb-8">
+            You're on these because you said you could do them, and members with the
+            fewest points go first. Each shift shows the points you'll earn once it's
+            done.
           </p>
           <ul class="cards">
             <li v-for="a in upcoming" :key="a.id" class="card">
               <span class="card-main">
                 <span class="card-name">{{ a.shift_type }}</span>
                 <span class="card-time">
-                  {{ formatDay(a.starts_at) }}, {{ formatTimeRange(a.starts_at, a.ends_at) }}
+                  {{ formatDay(a.starts_at) }},
+                  {{ formatTimeRange(a.starts_at, a.ends_at) }}
                 </span>
               </span>
               <span class="card-points">{{ points(a.weight, { sign: true }) }}</span>
@@ -118,7 +137,8 @@ onMounted(load)
             <span class="card-main">
               <span class="card-name">{{ a.shift_type }}</span>
               <span class="card-time">
-                {{ formatDay(a.starts_at) }}, {{ formatTimeRange(a.starts_at, a.ends_at) }}
+                {{ formatDay(a.starts_at) }},
+                {{ formatTimeRange(a.starts_at, a.ends_at) }}
               </span>
             </span>
             <span class="card-result">
@@ -148,6 +168,7 @@ onMounted(load)
   min-height: 56px;
   padding: var(--space-3) var(--space-4);
   border-right: 3px solid var(--color-text-accent);
+  border-bottom: 1px solid transparent;
   border-radius: var(--radius);
   box-shadow: 0px 3px 12px -5px var(--color-shadow);
   margin-bottom: var(--space-3);
@@ -187,62 +208,71 @@ onMounted(load)
   white-space: nowrap;
 }
 
-/* History: the right edge and the pill say how it went */
+/* History: done stands out in the balance orange, missed steps back in grey */
 .card.ok {
-  border-right-color: var(--color-ok);
+  border-color: var(--color-accent-secondary);
 }
 .card.ok .pill {
-  background: #0676471a;
-  color: var(--color-ok);
+  background: var(--color-accent-secondary);
+  color: var(--color-text-light);
 }
 .card.ok .card-points {
-  color: var(--color-ok);
+  color: var(--color-accent-secondary);
 }
-.card.error {
-  border-right-color: var(--color-error);
+.card.missed {
+  border-right-color: transparent;
 }
-.card.error .pill {
-  background: #b423181a;
-  color: var(--color-error);
+.card.missed .card-name,
+.card.missed .card-time,
+.card.missed .card-points {
+  color: var(--color-text-muted);
 }
-.card.error .card-points {
-  color: var(--color-error);
+.card.missed .pill {
+  background: #909cc226;
+  color: var(--color-text-muted);
 }
 .card.waiting {
-  border-right-color: var(--color-border);
+  border-right-color: var(--color-border-dark);
 }
 .card.waiting .pill {
   background: var(--color-pill-bg-accent);
-  color: var(--color-text);
+  color: var(--color-member-dark-1);
 }
 
-/* Empty state for "Coming up" (temporary, the redesign replaces it) */
+/* Empty states for "Coming up": a dashed outline reads as "a space for shifts" */
 .empty {
-  padding: var(--space-6);
-  border: 1px solid var(--color-border);
+  padding: var(--space-7);
+  border: 1.5px dashed var(--color-border-dark);
   border-radius: var(--radius-rounded);
-  background: #f2f4f4;
 }
 .empty h3 {
-  font-size: 1.125rem;
+  /* Every heading in the box: the same as the day headings on My availability */
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
   margin: 0 0 var(--space-2);
 }
-.empty > p.muted {
+.empty .descriptive {
   margin: 0;
 }
-.empty a {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-.empty h4 {
-  font-size: 1rem;
+.empty h3.mt {
   margin: var(--space-6) 0 var(--space-3);
+}
+/* The link: the amber and underline used for links on the landing page */
+.empty a {
+  color: var(--color-text-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-position: from-font;
+}
+.empty a:hover {
+  color: var(--color-accent-secondary);
 }
 .steps {
   list-style: none;
   counter-reset: step;
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
   margin: 0;
   padding: 0;
 }
@@ -251,7 +281,9 @@ onMounted(load)
   display: grid;
   grid-template-columns: 24px 1fr;
   column-gap: var(--space-3);
-  color: var(--color-muted);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 .steps li::before {
   content: counter(step);
@@ -259,32 +291,28 @@ onMounted(load)
   place-items: center;
   width: 24px;
   height: 24px;
-  margin-top: 1px;
+  margin-top: -1px;
   border-radius: 50%;
-  background: var(--color-accent);
-  color: #fff;
-  font-size: 0.8125rem;
+  background: var(--color-accent-secondary); /* the orange of the points badge */
+  color: var(--color-text-light);
+  font-size: 0.75rem;
   font-weight: 700;
-}
-.steps a {
-  color: var(--color-accent);
-  font-weight: 600;
 }
 .rule {
   display: flex;
   gap: var(--space-3);
-  align-items: flex-start;
+  align-items: center;
   margin: var(--space-6) 0 0;
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
-  background: #fff;
-  font-size: 0.9375rem;
-  color: var(--color-muted);
+  background: var(--color-dark-gradient); /* the same as an assigned shift */
+  color: var(--color-text-light);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 .rule svg {
   flex: none;
   margin-top: 1px;
-  color: var(--color-accent);
+  color: var(--color-text-accent); /* decorative, aria-hidden */
 }
 </style>
