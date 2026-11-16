@@ -139,7 +139,10 @@ If you only read a few entries, read these:
 
 ### User test: what I found
 
-- TBD
+- **Tested:** my own run as well, including the unhappy paths, since I knew what to expect from an early build. Every step worked as expected.
+- **Not happy with:** the look. It's generated boilerplate, not how I'd design it.
+- **More useful than my own run:** my tester's observations. She had no context, so she saw where the app doesn't explain itself; I knew how it was meant to work, so I couldn't.
+- **Sparked:** going through the flow as a participant rather than as the builder raised questions and ideas I hadn't had while building it.
 
 ### Takeaways
 
@@ -159,8 +162,8 @@ If you only read a few entries, read these:
 
 ## Looking back on the week
 
-- **What I'd do differently:** TBD
-- **What surprised me:** TBD
+- **What I'd do differently:** plan on paper first, drawing the flows and screens until they made sense. The project started as a way to learn Python with AI, by building, reading and reasoning, and grew into something I want to keep building beyond v0.1. More time on planning and design up front would have meant less to redesign now. I'd still keep the rule I work by, make it work first and make it look good after; what I'd change is drawing the flows before building them.
+- **What surprised me:** how much of the tedious work I can now hand to AI, which leaves me thinking about the product and the solution, and then watching how it gets built. And how good it felt to code again. My recent roles were mostly fixing bugs, and designing and building something again felt like being back on familiar ground.
 
 ---
 
@@ -205,7 +208,6 @@ If you only read a few entries, read these:
 - **Went wrong:** successful deletes looked like errors, because the frontend tried to read a response body from a 204 reply that has none. Fixed in the shared request function, which now also shows readable validation messages.
 - **Learned:** never build shift times with the browser's own timezone: a visitor in London would create shifts an hour off. The frontend now converts from Amsterdam time explicitly, with a test on both sides of the clock change.
 - **Noticed for the UX review:** the browser's confirm dialogs don't belong to the app's interface, and "Remove this type's shifts first" says what the system refuses but not why or what to do. Parked in `docs/v2-ideas.md` for the redesign.
-- **TBD:** Add `docs/v2-ideas.md`...
 
 ## Tue 3 Nov: the member side answers back
 
@@ -273,7 +275,7 @@ If you only read a few entries, read these:
 - **Built (7 Nov):** a Figma file with 19 screens at phone and desktop width, imported from the live app as editable layers instead of screenshots, so the redesign starts from the real screens.
 - **Found (7 Nov):** the first requests to the database after a quiet spell took about 40 seconds, while the health check answered in under 2. The free tiers explain the database sleeping; whether they explain all of the delay is still to test.
 - **Found (7 Nov):** "+1 points" and "1 pts". Planned fix: one plural helper for every count, using `Intl.PluralRules`, so Dutch comes with the right rules later. Reminders for this, a leftover starter CSS block and a box with empty space are marked on the Figma frames.
-- **Redesigned:** the member header. [What changed and why.]
+- **Redesigned:** the member header.
 - **Fixed:** the demo guide showed up in a newly started club. Locally, SQLite gave the new club the id of a deleted demo, so the remembered demo matched by id alone. The panel now also has to match the coordinator token, which is random and never reused. It was worse than it looked: the panel listed member links from a different club.
 - **Idea:** members who belong to several clubs. The hard part isn't tabs; it's that the app has no "person" separate from a membership. The most valuable part would be avoiding clashes across clubs, with each club only seeing "busy" for the others. Added to v2 ideas.
 - **Decision:** a deliberate v1.0 line. Redesign, a second user test with a coordinator, hardening, the Docker and Postgres track, season reset and Dutch. Everything else stays in v2 ideas.
@@ -318,7 +320,7 @@ If you only read a few entries, read these:
 - **Decision:** all rights reserved, with "Source available on GitHub". The code is public so people can read it, but I'm not giving permission to reuse it. An open source licence can come later if I want one; going the other way is harder.
 - **Went wrong:** the icons showed as squares. I'd used the SVGs as a CSS mask so they could take the link colour, and the mask didn't apply. Switched to plain images, which work and are easier to reason about.
 - **Went wrong:** the API docs link gave an error when running locally. The Vite dev server didn't pass `/docs` and `/openapi.json` on to the backend, so the frontend tried to handle them. Added both to the proxy. On Render this was never broken, because the backend serves everything there.
-- **Added:** a lightbulb icon for the "redesign in progress" banner. [Check: was this today or 15 Nov?]
+- **Added:** a lightbulb icon for the "redesign in progress" banner.
 
 ## Sun 15 Nov: plurals, a README picture and an SVG experiment
 
@@ -326,6 +328,6 @@ If you only read a few entries, read these:
 - **Understood:** why the landing can't show its own "waking up" message after a quiet spell. While the Render service sleeps, Render answers with its own loading page, so none of my frontend loads until the backend is awake. The message in the hero only helps when the frontend is up and the database is the slow part. The real fix is to host the frontend separately as static files, so it loads straight away and can explain the wait. Parked for after the redesign.
 - **Shipped:** one plural helper for every count (PR #56): "1 point", "2 points", "+1 point", using `Intl.PluralRules`, so Dutch can use its own rules later. This closes the "+1 points" and "1 pts" found on 7 Nov.
 - **Added:** a picture of the new hero at the top of the README.
-- **Went wrong:** the picture didn't show on GitHub. The file was called `.png.png`, because Windows hid the first extension.
+- **Went wrong:** the picture didn't show on GitHub. The file was called `.png.png`, because Windows hid the first extension. Renamed it with `git mv`.
 - **Tried:** letting AI edit an SVG: art lines rising from How it works to the top of the page. Three versions. The first went past the edge of the panel, the second added shapes I didn't want, and the third was lines only, with a mask on the panel. Saved it for the mobile landing work instead of finishing it now.
 - **Learned:** AI can edit SVG paths, but only with very exact instructions, and every round needs checking by eye. It's faster for generating curves than for fine-tuning them.
