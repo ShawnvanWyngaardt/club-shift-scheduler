@@ -11,7 +11,7 @@ If you only read a few entries, read these:
 - [Wed 4 Nov: v0.2.0 out, and a privacy gap closed](#wed-4-nov-v020-out-and-a-privacy-gap-closed): finding that anyone could read a club's data, and fixing it as the first patch.
 - [Wed 11 Nov: a user test with several people finds a real bug](#wed-11-nov-a-user-test-with-several-people-finds-a-real-bug): a rule with a passing test that was still wrong.
 
-**Where it stands:** v0.2.1 is live. The v0.3 redesign is under way: the landing page on desktop and the member's My availability screen are done; My shifts, Club points, the coordinator screens and the landing page on mobile are next.
+**Where it stands:** v0.2.1 is live. The v0.3 redesign is under way: the landing page on desktop and the member side has had its first full pass; the coordinator screens are next.
 
 ## Contents
 
@@ -45,6 +45,7 @@ If you only read a few entries, read these:
 - [Fri 13 Nov: the new hero and How it works](#fri-13-nov-the-new-hero-and-how-it-works)
 - [Sat 14 Nov: the About footer](#sat-14-nov-the-about-footer)
 - [Sun 15 Nov: plurals, a README picture and an SVG experiment](#sun-15-nov-plurals-a-readme-picture-and-an-svg-experiment)
+- [Mon 16 Nov: the member side gets its first full pass](#mon-16-nov-the-member-side-gets-its-first-full-pass)
 
 ---
 
@@ -331,3 +332,18 @@ If you only read a few entries, read these:
 - **Went wrong:** the picture didn't show on GitHub. The file was called `.png.png`, because Windows hid the first extension. Renamed it with `git mv`.
 - **Tried:** letting AI edit an SVG: art lines rising from How it works to the top of the page. Three versions. The first went past the edge of the panel, the second added shapes I didn't want, and the third was lines only, with a mask on the panel. Saved it for the mobile landing work instead of finishing it now.
 - **Learned:** AI can edit SVG paths, but only with very exact instructions, and every round needs checking by eye. It's faster for generating curves than for fine-tuning them.
+
+## Mon 16 Nov: the member side gets its first full pass
+
+- **Built:** My shifts redesigned. Shifts with an outcome move to a History section, done in orange with the points earned, missed in grey with the points taken away. The "How you got your points" list is gone: the balance is already in the header, and History shows where it came from.
+- **Built:** two empty states for Coming up. A first-time member sees what happens next in three steps, with a link to My availability. A member who has done all their shifts sees "No new shifts for you yet" instead of the first-visit explanation.
+- **Built:** the active tab marker now slides from one tab to the next. No animation library: Vue measures the active tab, CSS animates the move, and it jumps instead of sliding for people who have reduced motion turned on.
+- **Built:** Club points in the same card style. Your own card is pinned at the top in the dark style of an assigned shift, and everyone else stays alphabetical.
+- **Decision:** "No-show" became "Missed" on the member side. "No-show" is coordinator language and reads as an accusation to the person it's about.
+- **Decision:** the draft empty state said the coordinator publishes "once everyone has answered", that the coordinator "reviews answers", and that the coordinator assigns shifts. None of it is true: the coordinator can publish at any time, and the app assigns the shifts. Rewrote it to match how the app works, the same rule as on 3 Nov: interface copy has to be accurate, not just friendly.
+- **Found:** a coordinator can record done or missed on a shift that hasn't happened yet. My shifts now treats a recorded shift as history whatever its date. Kept on purpose for now, because I need it to test the member views. The backend should refuse it later.
+- **Went wrong:** pushed Figma too hard and hit the MCP tool limit on the Starter plan. Screenshots are the fallback when that happens.
+- **Learned:** `npm run lint` runs both linters with `--fix`, so it changes files. CI runs them without `--fix` and only reports. To check the way CI does, run `npx oxlint .` and `npx eslint .`.
+- **Learned:** my grey (#909CC2) and the balance orange are too light for small text. Using them for edges and fills, and darker shades for words, keeps the look without the problem.
+- **Tidied:** the journal got a contents list, a "Start here" section, and the missing TBDs filled in.
+- **Still to do:** loading and error states for the member screens.
