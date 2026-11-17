@@ -46,6 +46,7 @@ If you only read a few entries, read these:
 - [Sat 14 Nov: the About footer](#sat-14-nov-the-about-footer)
 - [Sun 15 Nov: plurals, a README picture and an SVG experiment](#sun-15-nov-plurals-a-readme-picture-and-an-svg-experiment)
 - [Mon 16 Nov: the member side gets its first full pass](#mon-16-nov-the-member-side-gets-its-first-full-pass)
+- [Tue 17 Nov: redesigning the coordinator side in a prototype](#tue-17-nov-redesigning-the-coordinator-side-in-a-prototype)
 
 ---
 
@@ -347,3 +348,16 @@ If you only read a few entries, read these:
 - **Learned:** my grey (#909CC2) and the balance orange are too light for small text. Using them for edges and fills, and darker shades for words, keeps the look without the problem.
 - **Tidied:** the journal got a contents list, a "Start here" section, and the missing TBDs filled in.
 - **Still to do:** loading and error states for the member screens.
+
+## Tue 17 Nov: redesigning the coordinator side in a prototype
+
+- **Built:** No code. A clickable prototype of the coordinator screens, reviewed all day with comments pinned to the elements, through about 60 small versions.
+- **Decision:** a colour scheme of its own for the coordinator side, so the two roles feel separate. Neutral surfaces, my blues and greens for actions and states. I picked "Ghost" (light) from three options and kept "Charcoal" (dark) for a dark mode later. Not fully settled on the colour options yet.
+- **Decision:** four tabs became three. Overview opens with "Needs you", a to-do list that only shows what needs doing. Points lost its tab: I asked to be convinced it was needed, and it wasn't, so points now live in the member list.
+- **Decision:** Record outcomes became Check-in, grouped by shift instead of by person, with a tick or cross per person and a Save per shift.
+- **Decision:** one word per idea across the app: "available" instead of "said yes", "Missed" instead of "No-show".
+- **Found:** in the live app a check-in is saved on the first click and can't be undone. The confirm step in the redesign fixes that, and needs a backend endpoint that saves a shift's outcomes all at once.
+- **Found:** a missed shift takes points away, which moves that person up in line. Fair in one sense, but a repeat no-shower keeps getting first pick. Open question for later.
+- **Found:** the prototype generates and publishes one week at a time; the API does every upcoming week at once. A decision for tomorrow.
+- **Learned:** reviewing a prototype as the user, element by element, surfaces product problems a visual pass misses. Most of today's changes removed things built for the prototype by Claude rather than added them.
+- **Next:** build it, in four pull requests: backend, foundations and Overview, Check-in, Members & shifts.
