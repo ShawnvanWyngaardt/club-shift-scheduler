@@ -7,9 +7,8 @@ import NotFound from '@/views/NotFound.vue'
 import CheckInView from '@/views/CheckInView.vue'
 import CoordinatorLayout from '@/views/CoordinatorLayout.vue'
 import LandingView from '@/views/LandingView.vue'
+import MembersView from '@/views/MembersView.vue'
 import OverviewView from '@/views/OverviewView.vue'
-import PointsView from '@/views/PointsView.vue'
-import SetupView from '@/views/SetupView.vue'
 import StartClubView from '@/views/StartClubView.vue'
 import WeekView from '@/views/WeekView.vue'
 
@@ -50,8 +49,10 @@ const router = createRouter({
         { path: 'check-in', name: 'check-in', component: CheckInView, props: true },
         // The old address, in case someone kept it
         { path: 'outcomes', redirect: (to) => ({ name: 'check-in', params: to.params }) },
-        { path: 'setup', name: 'setup', component: SetupView, props: true },
-        { path: 'points', name: 'coordinator-points', component: PointsView, props: true },
+        { path: 'members', name: 'members', component: MembersView, props: true },
+        // Old addresses, in case someone kept them. Points now live on Members.
+        { path: 'setup', redirect: (to) => ({ name: 'members', params: to.params }) },
+        { path: 'points', redirect: (to) => ({ name: 'members', params: to.params }) },
       ],
       meta: { title: 'Coordinator' },
     },

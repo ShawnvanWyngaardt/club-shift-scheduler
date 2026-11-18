@@ -67,7 +67,7 @@ async function copy() {
           <RouterLink
             class="link-button button-secondary"
             :to="{
-              name: 'setup',
+              name: 'members',
               params: { clubId: String(club.id), token: club.coordinator_token },
             }"
           >

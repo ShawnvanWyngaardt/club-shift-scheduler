@@ -22,6 +22,11 @@ import { formatDay, weeksFrom } from '@/time'
 
 const props = defineProps<{ clubId: string; token: string }>()
 const params = computed(() => ({ clubId: props.clubId, token: props.token }))
+const shiftsLink = computed(() => ({
+  name: 'members',
+  params: params.value,
+  query: { section: 'shifts' },
+}))
 
 const shifts = ref<ShiftDetail[]>([])
 const assignments = ref<AssignmentDetail[]>([])
@@ -108,7 +113,7 @@ onMounted(load)
           <h1>Overview</h1>
           <p>The next four weeks, and what needs you first.</p>
         </div>
-        <RouterLink class="btn btn-ghost" :to="{ name: 'setup', params }">Add shifts</RouterLink>
+        <RouterLink class="btn btn-ghost" :to="shiftsLink">Add shifts</RouterLink>
       </div>
 
       <div class="overview">
@@ -136,14 +141,14 @@ onMounted(load)
                 <span v-if="lastShift">
                   Every slot in the next four weeks has someone and everyone is checked in. Shifts
                   are planned until {{ formatDay(lastShift) }}, so
-                  <RouterLink class="text-link" :to="{ name: 'setup', params }"
+                  <RouterLink class="text-link" :to="shiftsLink"
                     >add the next weeks</RouterLink
                   >
                   before then.
                 </span>
                 <span v-else>
                   No shifts are planned yet.
-                  <RouterLink class="text-link" :to="{ name: 'setup', params }"
+                  <RouterLink class="text-link" :to="shiftsLink"
                     >Add your first shifts</RouterLink
                   >
                   to get started.

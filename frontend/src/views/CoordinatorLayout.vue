@@ -103,18 +103,10 @@ const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
             </RouterLink>
             <RouterLink
               class="tab"
-              :class="{ active: section === 'setup' }"
-              :to="{ name: 'setup', params: { clubId, token } }"
+              :class="{ active: section === 'members' }"
+              :to="{ name: 'members', params: { clubId, token } }"
             >
               Members &amp; shifts
-            </RouterLink>
-            <!-- Until PR 4 shows points on Members & shifts; then this tab goes. -->
-            <RouterLink
-              class="tab"
-              :class="{ active: section === 'coordinator-points' }"
-              :to="{ name: 'coordinator-points', params: { clubId, token } }"
-            >
-              Points
             </RouterLink>
           </nav>
         </div>
