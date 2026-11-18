@@ -29,7 +29,7 @@ async function run(action: () => Promise<unknown>, after?: () => void) {
     after?.()
   } catch (error) {
     message.value =
-      error instanceof ApiError ? error.message : 'Could not reach the server. James!!!'
+      error instanceof ApiError ? error.message : 'Could not reach the server.'
   } finally {
     working.value = false
   }
@@ -65,27 +65,30 @@ function give() {
 }
 
 function label(c: Candidate) {
-  return `${c.name} · ${points(c.points)}${c.busy ? ' · busy at that time' : ''}`
+  return `${c.name} | ${points(c.points)}${c.busy ? ' | busy at that time' : ''}`
 }
 </script>
 
 <template>
   <div class="change">
     <div v-if="mode === 'idle'" class="row-actions">
-      <button type="button" class="link-button" @click="startGive">Give to someone else</button>
-      <button type="button" class="link-button" @click="mode = 'remove'">Remove</button>
+      <button type="button" class="btn btn-small btn-edit" @click="startGive">
+        Give to someone else
+      </button>
+      <button type="button" class="btn btn-small btn-edit" @click="mode = 'remove'">Remove</button>
     </div>
 
     <div v-else-if="mode === 'remove'" class="panel" role="group" aria-label="Remove from shift">
       <p>
-        Take <strong>{{ assignment.member_name }}</strong> off this shift? Their "I could do this"
-        is cleared too, so a refill won't pick them again. The slot stays open until you fill it.
+        Take <strong>{{ assignment.member_name }}</strong> off this shift? They're marked not
+        available for it too, so filling the slots won't pick them again. The slot stays open until
+        you fill it.
       </p>
       <div class="row-actions">
-        <button type="button" class="button-danger" :disabled="working" @click="remove">
+        <button type="button" class="btn btn-small btn-primary" :disabled="working" @click="remove">
           Remove {{ assignment.member_name }}
         </button>
-        <button type="button" class="button-secondary" :disabled="working" @click="reset">
+        <button type="button" class="btn btn-small btn-ghost" :disabled="working" @click="reset">
           Keep
         </button>
       </div>
@@ -98,21 +101,23 @@ function label(c: Candidate) {
       <p v-if="working && candidates.length === 0" class="muted">Loading members…</p>
       <select v-else :id="`give-${assignment.id}`" v-model="chosen" required>
         <option :value="null" disabled>Choose a member</option>
-        <optgroup v-if="saidYes.length" label="Said they could">
+        <optgroup v-if="saidYes.length" label="Available">
           <option v-for="c in saidYes" :key="c.member_id" :value="c.member_id" :disabled="c.busy">
             {{ label(c) }}
           </option>
         </optgroup>
-        <optgroup v-if="others.length" label="Didn't say they could">
+        <optgroup v-if="others.length" label="Not available">
           <option v-for="c in others" :key="c.member_id" :value="c.member_id" :disabled="c.busy">
             {{ label(c) }}
           </option>
         </optgroup>
       </select>
-      <p class="muted hint">People who said they could come first, fewest points on top.</p>
+      <p class="muted hint">Available people come first, fewest points on top.</p>
       <div class="row-actions">
-        <button type="submit" :disabled="working || chosen === null">Give shift</button>
-        <button type="button" class="button-secondary" :disabled="working" @click="reset">
+        <button type="submit" class="btn btn-small btn-primary" :disabled="working || chosen === null">
+          Give shift
+        </button>
+        <button type="button" class="btn btn-small btn-ghost" :disabled="working" @click="reset">
           Cancel
         </button>
       </div>
@@ -123,19 +128,33 @@ function label(c: Candidate) {
 </template>
 
 <style scoped>
-.change {
-  margin-top: var(--space-2);
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
 .panel {
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: var(--r);
+  background: var(--bg);
 }
 .panel p {
-  margin: 0 0 var(--space-3);
+  margin: 0;
+  font-size: 14px;
+}
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
 }
 .hint {
-  margin: var(--space-2) 0 var(--space-3);
+  font-size: 13px;
+}
+.error {
+  margin: 8px 0 0;
+  font-size: 13px;
 }
 </style>

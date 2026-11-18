@@ -11,7 +11,7 @@ import OverviewView from '@/views/OverviewView.vue'
 import PointsView from '@/views/PointsView.vue'
 import SetupView from '@/views/SetupView.vue'
 import StartClubView from '@/views/StartClubView.vue'
-import ScheduleView from '@/views/ScheduleView.vue'
+import WeekView from '@/views/WeekView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,8 +46,7 @@ const router = createRouter({
       props: true,
       children: [
         { path: '', name: 'overview', component: OverviewView, props: true },
-        // One week's shifts. Restyled as the Week page in the next slice.
-        { path: 'week/:week', name: 'week', component: ScheduleView, props: true },
+        { path: 'week/:week', name: 'week', component: WeekView, props: true },
         { path: 'outcomes', name: 'outcomes', component: OutcomesView, props: true },
         { path: 'setup', name: 'setup', component: SetupView, props: true },
         { path: 'points', name: 'coordinator-points', component: PointsView, props: true },
