@@ -7,13 +7,16 @@ import { useRoute } from 'vue-router'
  * when the tab changes (only the RouterView swaps), so the bar survives and CSS
  * can animate it from the old tab to the new one.
  */
-export function useSlidingTabBar(nav: Ref<HTMLElement | null>) {
+export function useSlidingTabBar(
+  nav: Ref<HTMLElement | null>,
+  activeSelector = '.router-link-exact-active',
+) {
   const route = useRoute()
   const bar = ref({ x: 0, y: 0, width: 0 })
   const animate = ref(false) // off for the first placement, so it doesn't slide in from the left
 
   function moveBar() {
-    const active = nav.value?.querySelector<HTMLElement>('.router-link-exact-active')
+    const active = nav.value?.querySelector<HTMLElement>(activeSelector)
     if (!nav.value || !active) return
     const box = nav.value.getBoundingClientRect()
     const tab = active.getBoundingClientRect()

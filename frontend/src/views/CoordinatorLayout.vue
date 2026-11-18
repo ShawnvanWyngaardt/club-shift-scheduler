@@ -60,8 +60,11 @@ onMounted(async () => {
   if (state.value === 'ready') countWaiting()
 })
 
+// A week page belongs to Overview, so that tab stays lit there too.
+const section = computed(() => (route.name === 'week' ? 'overview' : route.name))
+
 const tabs = ref<HTMLElement | null>(null)
-const { barStyle, animate } = useSlidingTabBar(tabs)
+const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
 </script>
 
 <template>
@@ -91,21 +94,37 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
           </div>
           <nav ref="tabs" aria-label="Coordinator sections" class="tabs">
             <span class="tab-bar" :class="{ animate }" :style="barStyle" aria-hidden="true"></span>
-            <RouterLink class="tab" :to="{ name: 'schedule', params: { clubId, token } }">
+            <RouterLink
+              class="tab"
+              :class="{ active: section === 'overview' }"
+              :to="{ name: 'overview', params: { clubId, token } }"
+            >
               Overview
             </RouterLink>
-            <RouterLink class="tab" :to="{ name: 'outcomes', params: { clubId, token } }">
+            <RouterLink
+              class="tab"
+              :class="{ active: section === 'outcomes' }"
+              :to="{ name: 'outcomes', params: { clubId, token } }"
+            >
               Check-in
               <template v-if="waiting > 0">
                 <span class="count" aria-hidden="true">{{ waiting }}</span>
                 <span class="sr-only">, {{ waiting }} waiting</span>
               </template>
             </RouterLink>
-            <RouterLink class="tab" :to="{ name: 'setup', params: { clubId, token } }">
+            <RouterLink
+              class="tab"
+              :class="{ active: section === 'setup' }"
+              :to="{ name: 'setup', params: { clubId, token } }"
+            >
               Members &amp; shifts
             </RouterLink>
             <!-- Until PR 4 shows points on Members & shifts; then this tab goes. -->
-            <RouterLink class="tab" :to="{ name: 'coordinator-points', params: { clubId, token } }">
+            <RouterLink
+              class="tab"
+              :class="{ active: section === 'coordinator-points' }"
+              :to="{ name: 'coordinator-points', params: { clubId, token } }"
+            >
               Points
             </RouterLink>
           </nav>
@@ -171,7 +190,7 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
   text-decoration: none;
   white-space: nowrap;
 }
-.tab.router-link-exact-active {
+.tab.active {
   font-weight: 600;
   color: var(--navy);
 }

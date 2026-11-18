@@ -25,7 +25,7 @@ export function useStartDemo() {
       const demo = await demoApi.start()
       rememberDemo(demo)
       await router.push({
-        name: 'schedule',
+        name: 'overview',
         params: { clubId: String(demo.club_id), token: demo.coordinator_token },
       })
     } catch (error) {

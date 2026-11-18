@@ -128,6 +128,20 @@ export interface Ledger {
   entries: LedgerEntry[]
 }
 
+/** Only fill shifts starting in [from, to): one week is Monday 00:00 to the next Monday 00:00. */
+export interface ShiftRange {
+  from: string
+  to: string
+}
+
+export interface OutcomeInput {
+  assignment_id: number
+  status: 'done' | 'no_show'
+}
+
+// URLSearchParams encodes the "+" in "+01:00"; left raw, the server would read it as a space.
+const rangeQuery = (range?: ShiftRange) => (range ? `?${new URLSearchParams({ ...range })}` : '')
+
 const club = (clubId: number) => `/clubs/${clubId}`
 const asCoordinator = (token: string) => ({ 'X-Coordinator-Token': token })
 
@@ -139,14 +153,21 @@ export const coordinatorApi = {
     request<AssignmentDetail[]>(`${club(clubId)}/assignments`, { headers: asCoordinator(token) }),
   ledger: (clubId: number, token: string) =>
     request<Ledger>(`${club(clubId)}/ledger`, { headers: asCoordinator(token) }),
-  generate: (clubId: number, token: string) =>
-    request<Proposal>(`${club(clubId)}/schedule/generate`, {
+  generate: (clubId: number, token: string, range?: ShiftRange) =>
+    request<Proposal>(`${club(clubId)}/schedule/generate${rangeQuery(range)}`, {
       method: 'POST',
       headers: asCoordinator(token),
     }),
-  publish: (clubId: number, token: string) =>
-    request<Proposal>(`${club(clubId)}/schedule/publish`, {
+  publish: (clubId: number, token: string, range?: ShiftRange) =>
+    request<Proposal>(`${club(clubId)}/schedule/publish${rangeQuery(range)}`, {
       method: 'POST',
+      headers: asCoordinator(token),
+    }),
+  /** A whole shift's check-in at once: all saved, or none if one fails. */
+  recordOutcomes: (clubId: number, outcomes: OutcomeInput[], token: string) =>
+    request<{ id: number; status: AssignmentStatus }[]>(`${club(clubId)}/outcomes`, {
+      method: 'POST',
+      body: JSON.stringify({ outcomes }),
       headers: asCoordinator(token),
     }),
   recordOutcome: (assignmentId: number, status: 'done' | 'no_show', token: string) =>
