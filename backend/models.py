@@ -127,6 +127,13 @@ class AvailabilityUpdate(SQLModel):
     shift_ids: list[int]
 
 
+class AvailabilityPair(SQLModel):
+    """For the coordinator: this member is available for this shift."""
+
+    shift_id: int
+    member_id: int
+
+
 class MyShift(SQLModel):
     """A shift as one member sees it, with their own answer."""
 

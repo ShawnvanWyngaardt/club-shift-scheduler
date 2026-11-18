@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import AwareDatetime
-from sqlmodel import func, select
+from sqlmodel import col, func, select
 
 from database import save
 from dependencies import CoordinatorClub, SessionDep
@@ -15,6 +15,8 @@ from models import (
     AssignmentDetail,
     AssignmentMove,
     AssignmentPublic,
+    Availability,
+    AvailabilityPair,
     Candidate,
     Member,
     Proposal,
@@ -44,6 +46,24 @@ def shift_window(
 
 
 ShiftWindow = Annotated[Window, Depends(shift_window)]
+
+
+@router.get("/availability")
+def list_availability(
+    club_id: int, session: SessionDep, club: CoordinatorClub, window: ShiftWindow
+) -> list[AvailabilityPair]:
+    """Who is available for which shift, for example in one week. Feeds the Week page's grid."""
+    query = select(Availability.shift_id, Availability.member_id).where(
+        Availability.shift_id == Shift.id, Shift.club_id == club_id
+    )
+    if window.starts_from is not None:
+        query = query.where(col(Shift.starts_at) >= window.starts_from)
+    if window.starts_before is not None:
+        query = query.where(col(Shift.starts_at) < window.starts_before)
+    return [
+        AvailabilityPair(shift_id=shift_id, member_id=member_id)
+        for shift_id, member_id in session.exec(query).all()
+    ]
 
 
 @router.post("/schedule/generate")

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   ApiError,
   coordinatorApi,
   type AssignmentDetail,
+  type AvailabilityPair,
+  type Ledger,
   type Proposal,
   type ShiftDetail,
 } from '@/api'
@@ -11,8 +14,15 @@ import AssignmentChange from '@/components/AssignmentChange.vue'
 import FillOpenSlot from '@/components/FillOpenSlot.vue'
 import { useNotice } from '@/composables/useNotice'
 import { points } from '@/format'
-import { formatDay, formatTimeRange, weekFromKey } from '@/time'
-import { openSlots, shiftCards, type ShiftCard } from '@/week'
+import { formatDay, formatShortDay, formatTime, formatTimeRange, weekFromKey } from '@/time'
+import {
+  availabilityGrid,
+  availableMembers,
+  openSlots,
+  shiftCards,
+  type Cell,
+  type ShiftCard,
+} from '@/week'
 
 const props = defineProps<{ clubId: string; token: string; week: string }>()
 const clubId = computed(() => Number(props.clubId))
@@ -28,6 +38,8 @@ const inWeek = (iso: string) =>
 
 const shifts = ref<ShiftDetail[]>([])
 const assignments = ref<AssignmentDetail[]>([])
+const pairs = ref<AvailabilityPair[]>([])
+const balances = ref<Ledger['balances']>([])
 const proposal = ref<Proposal | null>(null)
 const showPreview = ref(false)
 const state = ref<'loading' | 'ready' | 'error'>('loading')
@@ -46,10 +58,14 @@ async function load() {
   if (!clubWeek.value) return
   state.value = 'loading'
   try {
-    const [allShifts, allAssignments] = await Promise.all([
+    const [allShifts, allAssignments, available, ledger] = await Promise.all([
       coordinatorApi.shifts(clubId.value),
       coordinatorApi.assignments(clubId.value, props.token),
+      coordinatorApi.availability(clubId.value, props.token, range.value),
+      coordinatorApi.ledger(clubId.value, props.token),
     ])
+    pairs.value = available
+    balances.value = ledger.balances
     shifts.value = allShifts.filter((s) => inWeek(isoTime(s.starts_at)))
     const ids = new Set(shifts.value.map((s) => s.id))
     assignments.value = allAssignments.filter((a) => ids.has(a.shift_id))
@@ -131,6 +147,35 @@ const open = computed(() =>
 const adding = computed(() => (showPreview.value ? (proposal.value?.assignments.length ?? 0) : 0))
 const stayEmpty = computed(() => openSlots(cards.value))
 
+/*
+ * "Shifts" or "Who is available". Kept in the URL (?view=available), so a refresh
+ * or a shared link opens the same view.
+ */
+const route = useRoute()
+const router = useRouter()
+const view = computed(() => (route.query.view === 'available' ? 'available' : 'shifts'))
+function setView(next: 'shifts' | 'available') {
+  router.replace({ query: next === 'available' ? { view: next } : {} })
+}
+
+const visibleDays = computed(() => (view.value === 'shifts' ? days.value : []))
+
+const grid = computed(() =>
+  availabilityGrid(
+    shifts.value,
+    assignments.value,
+    pairs.value,
+    balances.value,
+    showPreview.value ? (proposal.value?.assignments ?? []) : [],
+  ),
+)
+const cellText: Record<Cell, { symbol: string; label: string }> = {
+  on: { symbol: '✓', label: 'On the shift' },
+  new: { symbol: '✓', label: 'Added by the preview' },
+  yes: { symbol: '●', label: 'Available' },
+  no: { symbol: '·', label: 'Not available' },
+}
+
 const changeable = (card: ShiftCard) =>
   !card.started && card.holders.some((h) => h.status === 'assigned')
 
@@ -162,7 +207,10 @@ onMounted(load)
           <h1>
             Week {{ clubWeek?.number }} <span class="head-dates">{{ clubWeek?.dates }}</span>
           </h1>
-          <p v-if="shifts.length">{{ filled }} of {{ slots }} slots filled</p>
+          <p v-if="shifts.length">
+            {{ filled }} of {{ slots }} slots filled | {{ availableMembers(pairs) }} of
+            {{ balances.length }} members available
+          </p>
         </div>
         <div class="btn-row">
           <template v-if="showPreview">
@@ -226,7 +274,70 @@ onMounted(load)
         to plan it.
       </p>
 
-      <section v-for="group in days" :key="group.day" class="day">
+      <div v-if="shifts.length" class="toolbar">
+        <div class="seg" role="group" aria-label="View">
+          <button type="button" :aria-pressed="view === 'shifts'" @click="setView('shifts')">
+            Shifts
+          </button>
+          <button
+            type="button"
+            :aria-pressed="view === 'available'"
+            @click="setView('available')"
+          >
+            Who is available
+          </button>
+        </div>
+      </div>
+
+      <template v-if="view === 'available' && shifts.length">
+        <div class="grid-wrap">
+          <table class="avail">
+            <caption class="sr-only">Who is available for each shift this week</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="member-col">Member</th>
+                <th scope="col" class="pts-col">Points</th>
+                <th v-for="col in grid.columns" :key="col.shift.id" scope="col">
+                  {{ col.shift.shift_type }}
+                  <small>
+                    {{ formatShortDay(col.shift.starts_at) }},
+                    {{ formatTime(col.shift.starts_at) }}
+                  </small>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in grid.rows" :key="row.memberId">
+                <th scope="row">{{ row.name }}</th>
+                <td class="pts-col">{{ row.points }}</td>
+                <td v-for="(cell, i) in row.cells" :key="i">
+                  <span class="cell" :class="cell" aria-hidden="true">
+                    {{ cellText[cell].symbol }}
+                  </span>
+                  <span class="sr-only">{{ cellText[cell].label }}</span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Filled</th>
+                <td class="pts-col"></td>
+                <td v-for="col in grid.columns" :key="col.shift.id" :class="{ gap: col.gap }">
+                  {{ col.filled }}/{{ col.shift.slots }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="legend">
+          <span v-for="(text, cell) in cellText" :key="cell">
+            <span class="cell" :class="cell" aria-hidden="true">{{ text.symbol }}</span>
+            {{ text.label }}
+          </span>
+        </div>
+      </template>
+
+      <section v-for="group in visibleDays" :key="group.day" class="day">
         <h2 class="day-title">{{ group.day }}</h2>
         <div class="shift-grid">
           <article
@@ -300,6 +411,7 @@ onMounted(load)
   text-decoration: none;
 }
 .head-dates {
+  white-space: nowrap; /* "23 – 29 Nov" stays together on a phone */
   font-family: var(--font-time);
   font-size: 16px;
   font-weight: 500;
@@ -325,6 +437,129 @@ onMounted(load)
 .pill.new {
   background: var(--sky);
   color: #fff;
+}
+
+.toolbar {
+  margin-bottom: 20px;
+}
+/* Two-way switch: Shifts | Who is available */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.seg button {
+  min-height: 0;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--navy);
+  color: var(--on-navy);
+}
+
+/* Availability grid: names stay in view while the shifts scroll sideways */
+.grid-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.avail {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.avail th,
+.avail td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.avail thead th {
+  vertical-align: bottom;
+  font-weight: 600;
+  color: var(--navy);
+}
+.avail thead small {
+  display: block;
+  font-family: var(--font-time);
+  font-weight: 400;
+  color: var(--muted);
+}
+.avail th[scope='row'],
+.avail .member-col {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  text-align: left;
+  white-space: nowrap;
+}
+.avail th[scope='row'] {
+  font-weight: 600;
+}
+/* Points get their own column, so "points" isn't repeated on every row */
+.avail .pts-col {
+  width: 1%;
+  border-right: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.avail thead .pts-col {
+  color: var(--navy);
+}
+.avail tfoot td {
+  font-weight: 600;
+}
+.avail tfoot .gap {
+  color: var(--sky);
+}
+.cell {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cell.on {
+  background: var(--navy);
+  color: var(--on-navy);
+}
+.cell.new {
+  background: color-mix(in srgb, var(--sky) 18%, var(--surface));
+  box-shadow: inset 0 0 0 1.5px var(--sky);
+  color: var(--navy);
+}
+.cell.yes {
+  background: var(--mint-surface);
+  color: var(--green-ink);
+}
+.cell.no {
+  color: var(--muted);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+/* Only the label wrappers: the .cell inside keeps its own centred grid */
+.legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .day {

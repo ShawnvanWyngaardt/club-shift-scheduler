@@ -657,3 +657,42 @@ def test_schedule_one_week_at_a_time(client):
     assert client.post(f"{url}/generate", params=backwards, headers=headers).status_code == 422
     no_offset = {"from": "2030-01-07T00:00:00"}
     assert client.post(f"{url}/generate", params=no_offset, headers=headers).status_code == 422
+
+
+def test_coordinator_sees_who_is_available_per_week(client):
+    club_id, headers = make_club(client)
+    anna = add_member(client, club_id, headers, "Anna")
+    add_member(client, club_id, headers, "Bram")  # never answers
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shifts = [
+        client.post(
+            f"/api/clubs/{club_id}/shifts",
+            json={
+                "shift_type_id": shift_type["id"],
+                "starts_at": future_saturday(7, weeks=week),
+                "ends_at": future_saturday(10, weeks=week),
+                "slots": 1,
+            },
+            headers=headers,
+        ).json()
+        for week in (0, 1)
+    ]
+    client.put(
+        f"/api/me/{anna['access_token']}/availability",
+        json={"shift_ids": [s["id"] for s in shifts]},
+    )
+    url = f"/api/clubs/{club_id}/availability"
+
+    everything = client.get(url, headers=headers).json()
+    assert sorted(p["shift_id"] for p in everything) == sorted(s["id"] for s in shifts)
+
+    this_week = {"from": future_saturday(0), "to": future_saturday(0, weeks=1)}
+    assert client.get(url, params=this_week, headers=headers).json() == [
+        {"shift_id": shifts[0]["id"], "member_id": anna["id"]}
+    ]
+
+    other_id, other_headers = make_club(client)
+    assert client.get(url, headers=other_headers).status_code == 403
+    assert client.get(f"/api/clubs/{other_id}/availability", headers=other_headers).json() == []

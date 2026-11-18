@@ -134,6 +134,12 @@ export interface ShiftRange {
   to: string
 }
 
+/** This member is available for this shift. */
+export interface AvailabilityPair {
+  shift_id: number
+  member_id: number
+}
+
 export interface OutcomeInput {
   assignment_id: number
   status: 'done' | 'no_show'
@@ -161,6 +167,11 @@ export const coordinatorApi = {
   publish: (clubId: number, token: string, range?: ShiftRange) =>
     request<Proposal>(`${club(clubId)}/schedule/publish${rangeQuery(range)}`, {
       method: 'POST',
+      headers: asCoordinator(token),
+    }),
+  /** Who is available for which shift, optionally only in one week. */
+  availability: (clubId: number, token: string, range?: ShiftRange) =>
+    request<AvailabilityPair[]>(`${club(clubId)}/availability${rangeQuery(range)}`, {
       headers: asCoordinator(token),
     }),
   /** A whole shift's check-in at once: all saved, or none if one fails. */

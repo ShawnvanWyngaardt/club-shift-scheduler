@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   amsterdamToIso,
   formatDay,
+  formatShortDay,
+  formatTime,
   formatTimeRange,
   groupByWeek,
   weekFromKey,
@@ -21,6 +23,13 @@ describe('time formatting', () => {
 
   it('uses Amsterdam winter time after the clocks change', () => {
     expect(formatTimeRange('2026-10-31T06:00:00Z', '2026-10-31T10:00:00Z')).toBe('07:00 – 11:00')
+  })
+
+  it('has short forms for narrow column headers', () => {
+    expect([formatShortDay('2026-11-28T06:00:00Z'), formatTime('2026-11-28T06:00:00Z')]).toEqual([
+      'Sat 28',
+      '07:00',
+    ])
   })
 
   it('puts a late-evening UTC time on the right Amsterdam day', () => {

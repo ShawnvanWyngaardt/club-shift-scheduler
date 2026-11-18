@@ -37,6 +37,20 @@ describe('summariseWeeks', () => {
   })
 })
 
+describe('available members per week', () => {
+  it('counts each member once per week', () => {
+    const pairs = [
+      { shift_id: 2, member_id: 7 },
+      { shift_id: 3, member_id: 7 }, // same week, same member
+      { shift_id: 3, member_id: 8 },
+      { shift_id: 4, member_id: 7 }, // week 49
+      { shift_id: 1, member_id: 9 }, // week 47: not shown
+    ]
+    const summaries = summariseWeeks(weeks, shifts, assignments, pairs)
+    expect(summaries.map((s) => s.available)).toEqual([2, 1, 0])
+  })
+})
+
 describe('needsYou', () => {
   const summaries = summariseWeeks(weeks, shifts, assignments)
   const needs = needsYou(summaries, assignments, now)

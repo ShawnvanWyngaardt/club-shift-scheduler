@@ -1,4 +1,4 @@
-import type { AssignmentDetail, Ledger, ShiftDetail } from '@/api'
+import type { AssignmentDetail, AvailabilityPair, Ledger, ShiftDetail } from '@/api'
 import { waitingForCheckIn } from '@/checkin'
 import { formatDay, weekOf, type ClubWeek } from '@/time'
 
@@ -11,6 +11,8 @@ export interface WeekSummary {
   slots: number
   filled: number
   empty: number
+  /** Members available for at least one shift this week */
+  available: number
   /**
    * The API has no "published" flag: publishing just creates assignments.
    * So a week counts as published once anyone in it has a shift.
@@ -31,6 +33,7 @@ export function summariseWeeks(
   weeks: ClubWeek[],
   shifts: Shift[],
   assignments: Assignment[],
+  pairs: AvailabilityPair[] = [],
 ): WeekSummary[] {
   // Anyone on the shift fills a slot, whatever their outcome later.
   const held = new Map<number, number>()
@@ -39,10 +42,12 @@ export function summariseWeeks(
   const byWeek = new Map(
     weeks.map((week) => [
       week.key,
-      { week, shifts: 0, slots: 0, filled: 0, empty: 0, published: false },
+      { week, shifts: 0, slots: 0, filled: 0, empty: 0, available: 0, published: false },
     ]),
   )
+  const weekOfShift = new Map<number, string>()
   for (const shift of shifts) {
+    weekOfShift.set(shift.id, weekOf(shift.starts_at).key)
     const summary = byWeek.get(weekOf(shift.starts_at).key)
     if (!summary) continue // outside the weeks shown
     const filled = Math.min(held.get(shift.id) ?? 0, shift.slots)
@@ -51,6 +56,18 @@ export function summariseWeeks(
     summary.filled += filled
     summary.empty += shift.slots - filled
     if (filled > 0) summary.published = true
+  }
+
+  // Count each member once per week, however many shifts they're available for.
+  const availableIn = new Map<string, Set<number>>()
+  for (const pair of pairs) {
+    const key = weekOfShift.get(pair.shift_id)
+    if (key === undefined) continue
+    availableIn.set(key, (availableIn.get(key) ?? new Set()).add(pair.member_id))
+  }
+  for (const [key, members] of availableIn) {
+    const summary = byWeek.get(key)
+    if (summary) summary.available = members.size
   }
   return [...byWeek.values()]
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AssignmentDetail, Proposal, ShiftDetail } from '@/api'
-import { openSlots, shiftCards } from '@/week'
+import { availabilityGrid, availableMembers, openSlots, shiftCards } from '@/week'
 
 const now = new Date('2026-11-24T12:00:00Z')
 
@@ -70,5 +70,43 @@ describe('shiftCards', () => {
 
   it('counts only empty slots that can still be filled', () => {
     expect(openSlots(shiftCards(shifts, assignments, proposal, false, now))).toBe(3)
+  })
+})
+
+describe('availabilityGrid', () => {
+  const balances = [
+    { member_id: 4, name: 'Daan', balance: 3 },
+    { member_id: 9, name: 'Anna', balance: 0 },
+    { member_id: 5, name: 'Bram', balance: -3 },
+  ]
+  const pairs = [
+    { shift_id: 1, member_id: 9 },
+    { shift_id: 2, member_id: 5 },
+    { shift_id: 1, member_id: 4 },
+  ]
+  const twoShifts = shifts.slice(0, 2)
+
+  it('lists members by name with a cell per shift', () => {
+    const { rows } = availabilityGrid(twoShifts, assignments, pairs, balances)
+    expect(rows.map((r) => [r.name, r.points, r.cells])).toEqual([
+      ['Anna', 0, ['yes', 'no']],
+      ['Bram', -3, ['no', 'yes']],
+      ['Daan', 3, ['on', 'no']], // on the shift outranks being available
+    ])
+  })
+
+  it('marks who the preview adds, and counts them in the filled row', () => {
+    const added = [{ shift_id: 1, member_id: 9 }]
+    const { rows, columns } = availabilityGrid(twoShifts, assignments, pairs, balances, added)
+    expect(rows[0]!.cells[0]).toBe('new')
+    expect(columns.map((c) => [c.filled, c.gap])).toEqual([
+      [2, true], // 2 of 3
+      [0, true],
+    ])
+  })
+
+  it('counts each available member once', () => {
+    expect(availableMembers(pairs)).toBe(3)
+    expect(availableMembers([])).toBe(0)
   })
 })
