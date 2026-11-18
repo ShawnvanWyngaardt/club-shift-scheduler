@@ -15,6 +15,18 @@ const timeFormat = new Intl.DateTimeFormat('en-GB', {
 
 export const formatDay = (iso: string) => dayFormat.format(new Date(iso))
 
+const shortDayFormat = new Intl.DateTimeFormat('en-GB', {
+  weekday: 'short',
+  day: 'numeric',
+  timeZone: CLUB_TIMEZONE,
+})
+
+/** "Sat 28", for narrow places like the availability grid's column headers. */
+export const formatShortDay = (iso: string) => shortDayFormat.format(new Date(iso))
+
+/** "07:00", the start time on the club's clock. */
+export const formatTime = (iso: string) => timeFormat.format(new Date(iso))
+
 export const formatTimeRange = (start: string, end: string) =>
   `${timeFormat.format(new Date(start))} – ${timeFormat.format(new Date(end))}`
 

@@ -4,6 +4,7 @@ import {
   ApiError,
   coordinatorApi,
   type AssignmentDetail,
+  type AvailabilityPair,
   type Ledger,
   type ShiftDetail,
 } from '@/api'
@@ -25,6 +26,7 @@ const params = computed(() => ({ clubId: props.clubId, token: props.token }))
 const shifts = ref<ShiftDetail[]>([])
 const assignments = ref<AssignmentDetail[]>([])
 const balances = ref<Ledger['balances']>([])
+const pairs = ref<AvailabilityPair[]>([])
 const state = ref<'loading' | 'ready' | 'error'>('loading')
 const loadError = ref('')
 
@@ -32,14 +34,18 @@ async function load() {
   state.value = 'loading'
   try {
     const id = Number(props.clubId)
-    const [allShifts, allAssignments, ledger] = await Promise.all([
+    const shown = weeksFrom(new Date().toISOString(), 4)
+    const range = { from: shown[0]!.start, to: shown[shown.length - 1]!.end }
+    const [allShifts, allAssignments, ledger, available] = await Promise.all([
       coordinatorApi.shifts(id),
       coordinatorApi.assignments(id, props.token),
       coordinatorApi.ledger(id, props.token),
+      coordinatorApi.availability(id, props.token, range),
     ])
     shifts.value = allShifts
     assignments.value = allAssignments
     balances.value = ledger.balances
+    pairs.value = available
     state.value = 'ready'
   } catch (error) {
     loadError.value = error instanceof ApiError ? error.message : 'Could not reach the server.'
@@ -48,7 +54,12 @@ async function load() {
 }
 
 const weeks = computed(() =>
-  summariseWeeks(weeksFrom(new Date().toISOString(), 4), shifts.value, assignments.value),
+  summariseWeeks(
+    weeksFrom(new Date().toISOString(), 4),
+    shifts.value,
+    assignments.value,
+    pairs.value,
+  ),
 )
 const needs = computed(() => needsYou(weeks.value, assignments.value))
 const waiting = computed(() => waitingForCheckIn(assignments.value))
@@ -162,6 +173,9 @@ onMounted(load)
                   <template v-if="w.shifts">
                     <span><b>{{ w.filled }} of {{ w.slots }}</b> slots filled</span>
                     <span><b>{{ w.shifts }}</b> {{ w.shifts === 1 ? 'shift' : 'shifts' }}</span>
+                    <span>
+                      <b>{{ w.available }} of {{ balances.length }}</b> available
+                    </span>
                   </template>
                   <span v-else>Nothing planned this week</span>
                 </span>

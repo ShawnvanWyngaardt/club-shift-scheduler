@@ -1,4 +1,4 @@
-import type { AssignmentDetail, Proposal, ShiftDetail } from '@/api'
+import type { AssignmentDetail, AvailabilityPair, Ledger, Proposal, ShiftDetail } from '@/api'
 
 /*
  * What one shift card on the Week page shows: who is on it, who a preview
@@ -83,3 +83,64 @@ export function shiftCards(
 /** Empty slots on shifts that can still be filled: what Generate and Publish can act on. */
 export const openSlots = (cards: ShiftCard[]) =>
   cards.filter((c) => !c.started).reduce((sum, c) => sum + c.emptySlots.length, 0)
+
+/*
+ * The "Who is available" grid: members down the side, this week's shifts across.
+ * Each cell says whether the member is on the shift, would be added by the preview,
+ * is available, or isn't.
+ */
+export type Cell = 'on' | 'new' | 'yes' | 'no'
+
+export interface GridColumn {
+  shift: ShiftDetail
+  filled: number
+  /** Still has an empty slot, counting the preview */
+  gap: boolean
+}
+
+export interface GridRow {
+  memberId: number
+  name: string
+  points: number
+  cells: Cell[]
+}
+
+export function availabilityGrid(
+  shifts: ShiftDetail[],
+  assignments: AssignmentDetail[],
+  pairs: AvailabilityPair[],
+  balances: Ledger['balances'],
+  added: { shift_id: number; member_id: number }[] = [],
+): { columns: GridColumn[]; rows: GridRow[] } {
+  const key = (shiftId: number, memberId: number) => `${shiftId}:${memberId}`
+  const on = new Set(assignments.map((a) => key(a.shift_id, a.member_id)))
+  const isNew = new Set(added.map((a) => key(a.shift_id, a.member_id)))
+  const yes = new Set(pairs.map((p) => key(p.shift_id, p.member_id)))
+
+  const columns = shifts.map((shift) => {
+    const filled =
+      assignments.filter((a) => a.shift_id === shift.id).length +
+      added.filter((a) => a.shift_id === shift.id).length
+    return { shift, filled, gap: filled < shift.slots }
+  })
+
+  const rows = [...balances]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((member) => ({
+      memberId: member.member_id,
+      name: member.name,
+      points: member.balance,
+      cells: shifts.map((shift): Cell => {
+        const k = key(shift.id, member.member_id)
+        if (on.has(k)) return 'on'
+        if (isNew.has(k)) return 'new'
+        return yes.has(k) ? 'yes' : 'no'
+      }),
+    }))
+
+  return { columns, rows }
+}
+
+/** How many members are available for at least one of these shifts. */
+export const availableMembers = (pairs: AvailabilityPair[]) =>
+  new Set(pairs.map((p) => p.member_id)).size
