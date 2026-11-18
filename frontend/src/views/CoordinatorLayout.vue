@@ -82,9 +82,12 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
     <template v-else-if="club">
       <header class="topbar">
         <div class="wrap topbar-inner">
-          <div class="club">
-            <span class="eyebrow">Coordinator</span>
-            <span class="club-name">{{ club.name }}</span>
+          <div class="head-row">
+            <div class="club">
+              <span class="eyebrow">Coordinator</span>
+              <span class="club-name">{{ club.name }}</span>
+            </div>
+            <DemoPanel v-if="demo" :demo="demo" />
           </div>
           <nav ref="tabs" aria-label="Coordinator sections" class="tabs">
             <span class="tab-bar" :class="{ animate }" :style="barStyle" aria-hidden="true"></span>
@@ -109,9 +112,6 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
         </div>
       </header>
       <NoticeBar />
-      <div v-if="demo" class="wrap demo-wrap">
-        <DemoPanel :demo="demo" />
-      </div>
       <RouterView />
     </template>
   </div>
@@ -127,6 +127,14 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
 }
 .topbar-inner {
   padding-top: 16px;
+}
+/* Club name on the left; in a demo, the demo card on the right (below it on a phone) */
+.head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 .club {
   display: flex;
@@ -197,8 +205,5 @@ const { barStyle, animate } = useSlidingTabBar(tabs)
   color: #fff;
   font-size: 11px;
   font-weight: 800;
-}
-.demo-wrap {
-  padding-top: 16px;
 }
 </style>
