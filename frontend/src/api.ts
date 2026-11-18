@@ -232,6 +232,20 @@ export const coordinatorApi = {
       body: JSON.stringify({ name, weight }),
       headers: asCoordinator(token),
     }),
+  /** Rename a type or change its points. Points already earned don't change. */
+  editShiftType: (clubId: number, token: string, id: number, name: string, weight: number) =>
+    request<ShiftTypeInfo>(`${club(clubId)}/shift-types/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name, weight }),
+      headers: asCoordinator(token),
+    }),
+  /** New times or number of people, before it starts. A new time clears availability. */
+  editShift: (clubId: number, token: string, id: number, input: ShiftEdit) =>
+    request<unknown>(`${club(clubId)}/shifts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+      headers: asCoordinator(token),
+    }),
   addWeeklyShifts: (clubId: number, token: string, input: WeeklyShiftsInput) =>
     request<unknown[]>(`${club(clubId)}/shifts/weekly`, {
       method: 'POST',
@@ -276,6 +290,12 @@ export interface ShiftTypeInfo {
   id: number
   name: string
   weight: number
+}
+
+export interface ShiftEdit {
+  starts_at: string
+  ends_at: string
+  slots: number
 }
 
 export interface WeeklyShiftsInput {
