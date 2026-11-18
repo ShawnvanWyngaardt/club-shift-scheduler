@@ -8,13 +8,23 @@ import {
   type Proposal,
   type ShiftDetail,
 } from '@/api'
-import { formatDay, formatTimeRange, groupByDay } from '@/time'
+import { formatDay, formatTimeRange, groupByDay, weekFromKey } from '@/time'
 import AssignmentChange from '@/components/AssignmentChange.vue'
 import EmptySlotReason from '@/components/EmptySlotReason.vue'
 import FillOpenSlot from '@/components/FillOpenSlot.vue'
 
-const props = defineProps<{ clubId: string; token: string }>()
+const props = defineProps<{ clubId: string; token: string; week: string }>()
 const clubId = computed(() => Number(props.clubId))
+
+// The week from the URL ("2026-W48"). Generate and Publish only touch this week.
+const clubWeek = computed(() => weekFromKey(props.week))
+const range = computed(() =>
+  clubWeek.value ? { from: clubWeek.value.start, to: clubWeek.value.end } : undefined,
+)
+const inWeek = (s: { starts_at: string }) =>
+  !!clubWeek.value &&
+  new Date(s.starts_at) >= new Date(clubWeek.value.start) &&
+  new Date(s.starts_at) < new Date(clubWeek.value.end)
 
 const shifts = ref<ShiftDetail[]>([])
 const assignments = ref<AssignmentDetail[]>([])
@@ -38,7 +48,7 @@ async function load() {
       coordinatorApi.assignments(clubId.value, props.token),
       coordinatorApi.ledger(clubId.value, props.token),
     ])
-    shifts.value = allShifts
+    shifts.value = allShifts.filter(inWeek)
     assignments.value = allAssignments
     balances.value = new Map(ledger.balances.map((b) => [b.member_id, b.balance]))
     proposal.value = null
@@ -54,7 +64,7 @@ async function generate() {
   actionError.value = ''
   published.value = false
   try {
-    proposal.value = await coordinatorApi.generate(clubId.value, props.token)
+    proposal.value = await coordinatorApi.generate(clubId.value, props.token, range.value)
     phase.value = 'preview'
   } catch (error) {
     actionError.value = errorText(error)
@@ -66,7 +76,7 @@ async function publish() {
   phase.value = 'publishing'
   actionError.value = ''
   try {
-    await coordinatorApi.publish(clubId.value, props.token)
+    await coordinatorApi.publish(clubId.value, props.token, range.value)
     await load()
     published.value = true
   } catch (error) {
@@ -136,7 +146,16 @@ onMounted(load)
 
 <template>
   <main class="page-wide">
-    <p v-if="phase === 'loading'" class="muted">Loading shifts…</p>
+    <RouterLink class="text-link back" :to="{ name: 'overview', params: { clubId, token } }">
+      ← Back to Overview
+    </RouterLink>
+
+    <section v-if="!clubWeek">
+      <h1>This week doesn't exist</h1>
+      <p class="muted">Pick a week from the Overview.</p>
+    </section>
+
+    <p v-else-if="phase === 'loading'" class="muted">Loading shifts…</p>
 
     <section v-else-if="phase === 'error'">
       <h1>Couldn't load the schedule</h1>
@@ -146,13 +165,14 @@ onMounted(load)
 
     <template v-else>
       <header class="intro">
-        <h1>Schedule</h1>
+        <h1>Week {{ clubWeek?.number }}</h1>
+        <p class="dates">{{ clubWeek?.dates }}</p>
         <p class="muted">
           {{ openShifts.length }} upcoming
           {{ openShifts.length === 1 ? 'shift needs' : 'shifts need' }} people ({{
             emptySlots
           }}
-          empty {{ emptySlots === 1 ? 'slot' : 'slots' }}) · {{ fullyStaffed }} fully staffed
+          empty {{ emptySlots === 1 ? 'slot' : 'slots' }}) | {{ fullyStaffed }} fully staffed
         </p>
       </header>
 
@@ -162,7 +182,7 @@ onMounted(load)
       <!-- Before generating: every upcoming shift and who holds it -->
       <template v-if="!proposal">
         <p v-if="upcoming.length === 0" class="muted">
-          No upcoming shifts.
+          No upcoming shifts this week.
           <RouterLink :to="{ name: 'setup', params: { clubId, token } }"
             >Add some in Setup</RouterLink
           >.
@@ -285,6 +305,14 @@ onMounted(load)
 .intro,
 .day {
   margin-bottom: var(--space-6);
+}
+.back {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+}
+.dates {
+  margin: 0;
+  font-family: var(--font-time);
 }
 h2 {
   font-size: 1.125rem;

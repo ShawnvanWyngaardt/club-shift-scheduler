@@ -7,6 +7,7 @@ import NotFound from '@/views/NotFound.vue'
 import CoordinatorLayout from '@/views/CoordinatorLayout.vue'
 import LandingView from '@/views/LandingView.vue'
 import OutcomesView from '@/views/OutcomesView.vue'
+import OverviewView from '@/views/OverviewView.vue'
 import PointsView from '@/views/PointsView.vue'
 import SetupView from '@/views/SetupView.vue'
 import StartClubView from '@/views/StartClubView.vue'
@@ -44,7 +45,9 @@ const router = createRouter({
       component: CoordinatorLayout,
       props: true,
       children: [
-        { path: '', name: 'schedule', component: ScheduleView, props: true },
+        { path: '', name: 'overview', component: OverviewView, props: true },
+        // One week's shifts. Restyled as the Week page in the next slice.
+        { path: 'week/:week', name: 'week', component: ScheduleView, props: true },
         { path: 'outcomes', name: 'outcomes', component: OutcomesView, props: true },
         { path: 'setup', name: 'setup', component: SetupView, props: true },
         { path: 'points', name: 'coordinator-points', component: PointsView, props: true },
