@@ -1,9 +1,9 @@
 """Clubs and their setup: members, shift types and shifts."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from database import save
 from dependencies import CoordinatorClub, SessionDep, get_club_or_404
@@ -26,6 +26,7 @@ from models import (
     ShiftType,
     ShiftTypeCreate,
     ShiftTypePublic,
+    ShiftUpdate,
     WeeklyShiftsCreate,
 )
 from sandbox import CLUB_TZ
@@ -163,6 +164,67 @@ def remove_member(club_id: int, member_id: int, session: SessionDep, club: Coord
     session.flush()  # children first, then the member
     session.delete(member)
     session.commit()
+
+
+@router.put("/{club_id}/shift-types/{shift_type_id}", response_model=ShiftTypePublic)
+def edit_shift_type(
+    club_id: int,
+    shift_type_id: int,
+    data: ShiftTypeCreate,
+    session: SessionDep,
+    club: CoordinatorClub,
+) -> ShiftType:
+    """Rename a shift type or change its points.
+
+    Points already earned stay as they were: the ledger stores amounts, not types.
+    Check-ins from now on use the new points.
+    """
+    shift_type = find_in_club(session, ShiftType, shift_type_id, club_id, "Shift type")
+    shift_type.name = data.name
+    shift_type.weight = data.weight
+    return save(session, shift_type)
+
+
+@router.put("/{club_id}/shifts/{shift_id}", response_model=ShiftPublic)
+def edit_shift(
+    club_id: int, shift_id: int, data: ShiftUpdate, session: SessionDep, club: CoordinatorClub
+) -> Shift:
+    """Change a shift's times or how many people it needs, before it starts.
+
+    Once people are on it, its time can't move: they agreed to the old one.
+    A new time clears who was available, because a yes for one time isn't a yes for another.
+    """
+    shift = find_in_club(session, Shift, shift_id, club_id, "Shift")
+
+    # Times are compared in SQL: SQLite returns them without a zone, so comparing
+    # in Python could see a change where there is none.
+    def this_shift_where(*conditions):
+        return session.exec(select(Shift.id).where(Shift.id == shift_id, *conditions)).first()
+
+    if this_shift_where(col(Shift.starts_at) <= datetime.now(UTC)):
+        raise HTTPException(status_code=409, detail="This shift has already started")
+
+    taken = len(session.exec(select(Assignment.id).where(Assignment.shift_id == shift_id)).all())
+    moved = not this_shift_where(Shift.starts_at == data.starts_at, Shift.ends_at == data.ends_at)
+    if moved and taken:
+        raise HTTPException(
+            status_code=409,
+            detail="People are already on this shift, so its time can't change. "
+            "Take them off first.",
+        )
+    if data.slots < taken:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{taken} people are on this shift. Take someone off before lowering it.",
+        )
+
+    if moved:
+        for row in session.exec(select(Availability).where(Availability.shift_id == shift_id)):
+            session.delete(row)
+    shift.starts_at = data.starts_at
+    shift.ends_at = data.ends_at
+    shift.slots = data.slots
+    return save(session, shift)
 
 
 @router.delete("/{club_id}/shifts/{shift_id}", status_code=204)

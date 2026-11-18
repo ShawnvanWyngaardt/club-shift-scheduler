@@ -85,17 +85,22 @@ class ShiftBase(SQLModel):
     slots: int = Field(ge=1, le=50)
 
 
-class ShiftCreate(ShiftBase):
+class ShiftUpdate(ShiftBase):
+    """New times and number of people for an existing shift."""
+
     # Times must carry a UTC offset: the database stores them timezone-aware
     starts_at: AwareDatetime
     ends_at: AwareDatetime
-    shift_type_id: int
 
     @model_validator(mode="after")
-    def check_times(self) -> "ShiftCreate":
+    def check_times(self) -> "ShiftUpdate":
         if self.ends_at <= self.starts_at:
             raise ValueError("ends_at must be after starts_at")
         return self
+
+
+class ShiftCreate(ShiftUpdate):
+    shift_type_id: int
 
 
 class WeeklyShiftsCreate(ShiftCreate):

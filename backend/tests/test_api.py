@@ -696,3 +696,94 @@ def test_coordinator_sees_who_is_available_per_week(client):
     other_id, other_headers = make_club(client)
     assert client.get(url, headers=other_headers).status_code == 403
     assert client.get(f"/api/clubs/{other_id}/availability", headers=other_headers).json() == []
+
+
+def test_coordinator_can_edit_a_shift_type(client):
+    club_id, headers = make_club(client)
+    url = f"/api/clubs/{club_id}/shift-types"
+    shift_type = client.post(url, json={"name": "Bar", "weight": 1}, headers=headers).json()
+
+    edited = client.put(
+        f"{url}/{shift_type['id']}", json={"name": "Bar upstairs", "weight": 3}, headers=headers
+    )
+    assert edited.status_code == 200
+    assert client.get(url).json() == [{"id": shift_type["id"], "name": "Bar upstairs", "weight": 3}]
+
+    too_many = {"name": "Bar", "weight": 4}
+    assert (
+        client.put(f"{url}/{shift_type['id']}", json=too_many, headers=headers).status_code == 422
+    )
+    other_id, other_headers = make_club(client)
+    elsewhere = f"/api/clubs/{other_id}/shift-types/{shift_type['id']}"
+    assert (
+        client.put(elsewhere, json=too_many | {"weight": 1}, headers=other_headers).status_code
+        == 404
+    )
+
+
+def test_a_new_time_clears_who_was_available(client):
+    club_id, headers = make_club(client)
+    anna = add_member(client, club_id, headers, "Anna")
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shift = client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": future_saturday(7),
+            "ends_at": future_saturday(10),
+            "slots": 1,
+        },
+        headers=headers,
+    ).json()
+    my_shifts = f"/api/me/{anna['access_token']}/shifts"
+    client.put(f"/api/me/{anna['access_token']}/availability", json={"shift_ids": [shift["id"]]})
+    url = f"/api/clubs/{club_id}/shifts/{shift['id']}"
+
+    # More people, same time: Anna's answer stands.
+    same_time = {"starts_at": future_saturday(7), "ends_at": future_saturday(10), "slots": 3}
+    response = client.put(url, json=same_time, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["slots"] == 3
+    assert client.get(my_shifts).json()[0]["available"] is True
+
+    # A new time: her yes was for the old one.
+    later = {"starts_at": future_saturday(14), "ends_at": future_saturday(17), "slots": 3}
+    assert client.put(url, json=later, headers=headers).status_code == 200
+    assert client.get(my_shifts).json()[0]["available"] is False
+
+    backwards = {"starts_at": future_saturday(17), "ends_at": future_saturday(14), "slots": 3}
+    assert client.put(url, json=backwards, headers=headers).status_code == 422
+
+
+def test_a_scheduled_shift_keeps_its_time_and_people(client):
+    club_id, headers, _ = published_shift(client)
+    shift_id = first_assignment(client, club_id, headers)["shift_id"]
+    url = f"/api/clubs/{club_id}/shifts/{shift_id}"
+
+    moved = {"starts_at": future_saturday(8), "ends_at": future_saturday(11), "slots": 1}
+    assert client.put(url, json=moved, headers=headers).status_code == 409
+    fewer = {"starts_at": future_saturday(7), "ends_at": future_saturday(10), "slots": 0}
+    assert client.put(url, json=fewer, headers=headers).status_code == 422  # at least 1
+    more = fewer | {"slots": 2}
+    assert client.put(url, json=more, headers=headers).status_code == 200
+
+
+def test_a_started_shift_cant_be_edited(client):
+    club_id, headers = make_club(client)
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    yesterday = datetime.now(ZoneInfo("Europe/Amsterdam")) - timedelta(days=1)
+    times = {
+        "starts_at": yesterday.isoformat(),
+        "ends_at": (yesterday + timedelta(hours=3)).isoformat(),
+    }
+    shift = client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json=times | {"shift_type_id": shift_type["id"], "slots": 1},
+        headers=headers,
+    ).json()
+    url = f"/api/clubs/{club_id}/shifts/{shift['id']}"
+    assert client.put(url, json=times | {"slots": 2}, headers=headers).status_code == 409
