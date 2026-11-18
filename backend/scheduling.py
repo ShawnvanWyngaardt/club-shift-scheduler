@@ -73,9 +73,19 @@ def candidates_for(
     return sorted(candidates, key=lambda c: (c.busy, not c.said_yes, c.points, c.name))
 
 
-def build_problem(club_id: int, session: Session) -> Problem:
+def build_problem(
+    club_id: int,
+    session: Session,
+    starts_from: datetime | None = None,
+    starts_before: datetime | None = None,
+) -> Problem:
     """Translate database rows into the solver's plain input.
-    Only upcoming shifts with empty slots are scheduled; existing assignments are kept."""
+    Only upcoming shifts with empty slots are scheduled; existing assignments are kept.
+
+    With starts_from and starts_before, only shifts starting in that window get filled,
+    for example one week. Assignments outside it still count towards each member's load,
+    and still block overlapping shifts.
+    """
     now = datetime.now(UTC)
     members = session.exec(select(Member).where(Member.club_id == club_id)).all()
     points = points_by_member(club_id, session)
@@ -110,11 +120,19 @@ def build_problem(club_id: int, session: Session) -> Problem:
         filled[shift_id] = filled.get(shift_id, 0) + 1
         already_assigned.setdefault(member_id, []).append(shift_in[shift_id])
 
+    # The shifts to fill this time. Compared in SQL, like "upcoming" above.
+    in_window = select(Shift.id).where(col(Shift.id).in_(list(shift_in)))
+    if starts_from is not None:
+        in_window = in_window.where(col(Shift.starts_at) >= starts_from)
+    if starts_before is not None:
+        in_window = in_window.where(col(Shift.starts_at) < starts_before)
+    to_fill = set(session.exec(in_window).all())
+
     # Only the empty slots are left to fill.
     open_shifts = [
         replace(shift, slots=shift.slots - filled.get(shift.id, 0))
         for shift in shift_in.values()
-        if shift.slots > filled.get(shift.id, 0)
+        if shift.id in to_fill and shift.slots > filled.get(shift.id, 0)
     ]
     available_rows = session.exec(
         select(Availability.member_id, Availability.shift_id).where(
