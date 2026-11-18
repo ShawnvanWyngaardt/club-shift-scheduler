@@ -78,7 +78,7 @@ export interface Need {
   title: string
   text: string
   action: string
-  to: { name: 'outcomes' } | { name: 'week'; week: string }
+  to: { name: 'check-in' } | { name: 'week'; week: string }
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
@@ -102,7 +102,7 @@ export function needsYou(
       title: `${plural(waiting, 'person', 'people')} to check in, from ${formatDay(earliest!)}`,
       text: 'Mark who turned up, so the points stay fair.',
       action: 'Check in',
-      to: { name: 'outcomes' },
+      to: { name: 'check-in' },
     })
   }
 

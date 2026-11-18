@@ -3,10 +3,10 @@ import '@/assets/coordinator.css'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ApiError, coordinatorApi, type ClubPublic } from '@/api'
-import { waitingForCheckIn } from '@/checkin'
 import DemoPanel from '@/components/DemoPanel.vue'
 import NoticeBar from '@/components/NoticeBar.vue'
 import { useSlidingTabBar } from '@/composables/useSlidingTabBar'
+import { useWaitingCount } from '@/composables/useWaitingCount'
 import { recallDemo } from '@/demo'
 
 const props = defineProps<{ clubId: string; token: string }>()
@@ -32,20 +32,9 @@ async function load() {
   }
 }
 
-/*
- * The orange count on the Check-in tab. It is a hint, so a failed request
- * shows no count rather than an error. Recounted on every tab change, so it
- * catches up after a check-in is saved.
- */
-const waiting = ref(0)
-async function countWaiting() {
-  try {
-    const assignments = await coordinatorApi.assignments(Number(props.clubId), props.token)
-    waiting.value = waitingForCheckIn(assignments)
-  } catch {
-    waiting.value = 0
-  }
-}
+// The orange count on the Check-in tab, recounted on every tab change.
+const { waiting, refreshWaiting } = useWaitingCount()
+const countWaiting = () => refreshWaiting(Number(props.clubId), props.token)
 
 const route = useRoute()
 watch(
@@ -103,8 +92,8 @@ const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
             </RouterLink>
             <RouterLink
               class="tab"
-              :class="{ active: section === 'outcomes' }"
-              :to="{ name: 'outcomes', params: { clubId, token } }"
+              :class="{ active: section === 'check-in' }"
+              :to="{ name: 'check-in', params: { clubId, token } }"
             >
               Check-in
               <template v-if="waiting > 0">
