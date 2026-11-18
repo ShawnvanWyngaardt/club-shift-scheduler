@@ -26,7 +26,9 @@ export interface ShiftCard {
 }
 
 const names = (list: string[]) =>
-  list.length <= 2 ? list.join(' and ') : `${list.slice(0, -1).join(', ')} and ${list.at(-1)}`
+  list.length <= 2
+    ? list.join(' and ')
+    : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`
 const isAre = (list: string[]) => (list.length === 1 ? 'is' : 'are')
 
 const nobody = (holders: number): SlotReason => ({
