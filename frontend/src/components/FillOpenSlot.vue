@@ -58,32 +58,36 @@ async function assign() {
 }
 
 const optionText = (c: Candidate) =>
-  `${c.name} · ${points(c.points, { short: true })}${c.busy ? ' · busy at that time' : ''}`
+  `${c.name} | ${points(c.points, { short: true })}${c.busy ? ' | busy at that time' : ''}`
 </script>
 
 <template>
   <div class="fill">
-    <button v-if="!open" type="button" class="link-button" @click="start">Assign someone</button>
+    <button v-if="!open" type="button" class="btn btn-small btn-secondary" @click="start">
+      Assign
+    </button>
 
     <form v-else class="panel" @submit.prevent="assign">
       <label class="field-label" :for="`fill-${shiftId}`">Assign to {{ shiftLabel }}</label>
       <p v-if="working && candidates.length === 0" class="muted">Loading members…</p>
       <select v-else :id="`fill-${shiftId}`" v-model="chosen" required>
         <option :value="null" disabled>Choose a member</option>
-        <optgroup v-if="saidYes.length" label="Said they could">
+        <optgroup v-if="saidYes.length" label="Available">
           <option v-for="c in saidYes" :key="c.member_id" :value="c.member_id" :disabled="c.busy">
             {{ optionText(c) }}
           </option>
         </optgroup>
-        <optgroup v-if="others.length" label="Didn't say they could">
+        <optgroup v-if="others.length" label="Not available">
           <option v-for="c in others" :key="c.member_id" :value="c.member_id" :disabled="c.busy">
             {{ optionText(c) }}
           </option>
         </optgroup>
       </select>
       <div class="row-actions">
-        <button type="submit" :disabled="working || chosen === null">Assign</button>
-        <button type="button" class="button-secondary" :disabled="working" @click="cancel">
+        <button type="submit" class="btn btn-small btn-primary" :disabled="working || chosen === null">
+          Assign
+        </button>
+        <button type="button" class="btn btn-small btn-ghost" :disabled="working" @click="cancel">
           Cancel
         </button>
       </div>
@@ -94,16 +98,25 @@ const optionText = (c: Candidate) =>
 </template>
 
 <style scoped>
-.fill {
-  margin-top: var(--space-2);
+/* Sits inside an empty slot on the Week page; the form takes the slot's full width when open. */
+.fill:has(.panel) {
+  flex-basis: 100%;
 }
 .panel {
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  display: grid;
+  gap: 8px;
 }
-.panel select {
-  margin-bottom: var(--space-3);
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.error {
+  margin: 8px 0 0;
+  font-size: 13px;
 }
 </style>
