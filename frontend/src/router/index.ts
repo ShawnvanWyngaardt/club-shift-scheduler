@@ -4,9 +4,9 @@ import MemberLayout from '@/views/MemberLayout.vue'
 import MemberShifts from '@/views/MemberShifts.vue'
 import MemberStandings from '@/views/MemberStandings.vue'
 import NotFound from '@/views/NotFound.vue'
+import CheckInView from '@/views/CheckInView.vue'
 import CoordinatorLayout from '@/views/CoordinatorLayout.vue'
 import LandingView from '@/views/LandingView.vue'
-import OutcomesView from '@/views/OutcomesView.vue'
 import OverviewView from '@/views/OverviewView.vue'
 import PointsView from '@/views/PointsView.vue'
 import SetupView from '@/views/SetupView.vue'
@@ -47,7 +47,9 @@ const router = createRouter({
       children: [
         { path: '', name: 'overview', component: OverviewView, props: true },
         { path: 'week/:week', name: 'week', component: WeekView, props: true },
-        { path: 'outcomes', name: 'outcomes', component: OutcomesView, props: true },
+        { path: 'check-in', name: 'check-in', component: CheckInView, props: true },
+        // The old address, in case someone kept it
+        { path: 'outcomes', redirect: (to) => ({ name: 'check-in', params: to.params }) },
         { path: 'setup', name: 'setup', component: SetupView, props: true },
         { path: 'points', name: 'coordinator-points', component: PointsView, props: true },
       ],

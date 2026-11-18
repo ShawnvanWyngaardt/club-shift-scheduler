@@ -217,3 +217,32 @@
   background: var(--chip);
   color: var(--muted);
 }
+
+/* Tinted squares: the legend's icons, and the inside of the card buttons */
+.coord .mini {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.coord .mini svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.coord .mini.tick {
+  background: var(--mint-surface);
+  color: var(--green-ink);
+}
+/* The one place red is used on the coordinator side: the button to mark a missed shift */
+.coord .mini.cross {
+  background: color-mix(in srgb, #c62828 12%, transparent);
+  color: #c62828;
+}
