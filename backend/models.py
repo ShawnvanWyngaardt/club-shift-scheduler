@@ -234,6 +234,26 @@ class AssignmentUpdate(SQLModel):
     status: Literal["done", "no_show"]
 
 
+class OutcomeItem(SQLModel):
+    assignment_id: int
+    status: Literal["done", "no_show"]
+
+
+class OutcomeBatch(SQLModel):
+    """Several check-ins at once, for example everyone on one shift."""
+
+    outcomes: list[OutcomeItem]
+
+    @model_validator(mode="after")
+    def check_outcomes(self) -> "OutcomeBatch":
+        ids = [item.assignment_id for item in self.outcomes]
+        if not ids:
+            raise ValueError("Send at least one outcome")
+        if len(ids) != len(set(ids)):
+            raise ValueError("Each assignment can only appear once")
+        return self
+
+
 class Balance(SQLModel):
     member_id: int
     name: str

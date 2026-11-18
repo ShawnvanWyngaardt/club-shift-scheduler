@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Header, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from dependencies import CoordinatorClub, SessionDep, check_coordinator
 from models import (
@@ -17,6 +17,7 @@ from models import (
     Club,
     Ledger,
     Member,
+    OutcomeBatch,
     PointsEntry,
     Shift,
     ShiftType,
@@ -64,6 +65,27 @@ def clear_answer(session: Session, member_id: int, shift_id: int) -> None:
         session.delete(answer)
 
 
+def require_no_outcome(assignment: Assignment) -> None:
+    """An outcome is final: it already wrote a ledger entry."""
+    if assignment.status != "assigned":
+        raise HTTPException(status_code=409, detail=f"Already marked as {assignment.status}")
+
+
+def add_outcome(
+    session: Session, assignment: Assignment, shift: Shift, shift_type: ShiftType, status: str
+) -> None:
+    """Set the status and add the matching ledger entry. The caller commits."""
+    assignment.status = status
+    session.add(assignment)
+    session.add(
+        PointsEntry(
+            member_id=assignment.member_id,
+            change=shift_type.weight if status == "done" else -shift_type.weight,
+            reason=f"{status}: {shift_type.name}, {shift.starts_at:%a %d %b}",
+        )
+    )
+
+
 @router.patch("/assignments/{assignment_id}", response_model=AssignmentPublic)
 def record_outcome(
     assignment_id: int,
@@ -73,22 +95,44 @@ def record_outcome(
 ) -> Assignment:
     """Mark an assignment done or no-show, and write the matching ledger entry."""
     assignment, shift, shift_type, _ = load_assignment(session, assignment_id, x_coordinator_token)
-    if assignment.status != "assigned":
-        raise HTTPException(status_code=409, detail=f"Already marked as {assignment.status}")
-
-    change = shift_type.weight if data.status == "done" else -shift_type.weight
-    assignment.status = data.status
-    session.add(assignment)
-    session.add(
-        PointsEntry(
-            member_id=assignment.member_id,
-            change=change,
-            reason=f"{data.status}: {shift_type.name}, {shift.starts_at:%a %d %b}",
-        )
-    )
+    require_no_outcome(assignment)
+    add_outcome(session, assignment, shift, shift_type, data.status)
     session.commit()  # status and ledger entry are saved together, or not at all
     session.refresh(assignment)
     return assignment
+
+
+@router.post("/clubs/{club_id}/outcomes", response_model=list[AssignmentPublic])
+def record_outcomes(
+    club_id: int, data: OutcomeBatch, session: SessionDep, club: CoordinatorClub
+) -> list[Assignment]:
+    """Save a whole shift's check-in in one go. One bad row and nothing is saved."""
+    ids = [item.assignment_id for item in data.outcomes]
+    rows = session.exec(
+        select(Assignment, Shift, ShiftType).where(
+            col(Assignment.id).in_(ids),
+            Assignment.shift_id == Shift.id,
+            Shift.shift_type_id == ShiftType.id,
+            Shift.club_id == club_id,
+        )
+    ).all()
+    found = {
+        assignment.id: (assignment, shift, shift_type) for assignment, shift, shift_type in rows
+    }
+    if len(found) != len(ids):
+        raise HTTPException(status_code=404, detail="Assignment not found in this club")
+
+    # Check every row before changing any of them.
+    for assignment, _, _ in found.values():
+        require_no_outcome(assignment)
+    for item in data.outcomes:
+        add_outcome(session, *found[item.assignment_id], item.status)
+    session.commit()  # every status and ledger entry together, or none of them
+
+    saved = [found[assignment_id][0] for assignment_id in ids]
+    for assignment in saved:
+        session.refresh(assignment)
+    return saved
 
 
 @router.delete("/assignments/{assignment_id}", status_code=204)

@@ -12,10 +12,10 @@ from database import get_session
 from main import app
 
 
-def future_saturday(hour: int) -> str:
-    """An Amsterdam time on the coming Saturday, so tests never fall into the past."""
+def future_saturday(hour: int, weeks: int = 0) -> str:
+    """An Amsterdam time on the coming Saturday, or weeks later. Never in the past."""
     today = date.today()
-    saturday = today + timedelta(days=(5 - today.weekday()) % 7 or 7)
+    saturday = today + timedelta(days=(5 - today.weekday()) % 7 or 7, weeks=weeks)
     return datetime.combine(saturday, time(hour), ZoneInfo("Europe/Amsterdam")).isoformat()
 
 
@@ -527,3 +527,133 @@ def test_coordinator_can_fill_an_open_slot_by_hand(client):
     uma = add_member(client, club_id, headers, "Uma")
     full = client.post(f"{url}/assignments", json={"member_id": uma["id"]}, headers=headers)
     assert full.status_code == 409
+
+
+def shift_for_two(client):
+    """Anna and Bram both on one weight-3 shift, published."""
+    club_id, headers = make_club(client)
+    anna = add_member(client, club_id, headers, "Anna")
+    bram = add_member(client, club_id, headers, "Bram")
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shift = client.post(
+        f"/api/clubs/{club_id}/shifts",
+        json={
+            "shift_type_id": shift_type["id"],
+            "starts_at": future_saturday(7),
+            "ends_at": future_saturday(10),
+            "slots": 2,
+        },
+        headers=headers,
+    ).json()
+    for member in (anna, bram):
+        client.put(
+            f"/api/me/{member['access_token']}/availability", json={"shift_ids": [shift["id"]]}
+        )
+    client.post(f"/api/clubs/{club_id}/schedule/publish", headers=headers)
+    assignments = client.get(f"/api/clubs/{club_id}/assignments", headers=headers).json()
+    by_name = {a["member_name"]: a["id"] for a in assignments}
+    return club_id, headers, by_name
+
+
+def test_a_whole_shift_is_checked_in_at_once(client):
+    club_id, headers, ids = shift_for_two(client)
+    url = f"/api/clubs/{club_id}/outcomes"
+    batch = {
+        "outcomes": [
+            {"assignment_id": ids["Anna"], "status": "done"},
+            {"assignment_id": ids["Bram"], "status": "no_show"},
+        ]
+    }
+
+    response = client.post(url, json=batch, headers=headers)
+    assert response.status_code == 200
+    assert [a["status"] for a in response.json()] == ["done", "no_show"]
+    balances = client.get(f"/api/clubs/{club_id}/ledger", headers=headers).json()["balances"]
+    assert {b["name"]: b["balance"] for b in balances} == {"Anna": 3, "Bram": -3}
+
+    # Saving the same check-in twice would count the points twice.
+    assert client.post(url, json=batch, headers=headers).status_code == 409
+
+
+def test_check_in_saves_nothing_when_one_row_fails(client):
+    club_id, headers, ids = shift_for_two(client)
+    client.patch(f"/api/assignments/{ids['Anna']}", json={"status": "done"}, headers=headers)
+
+    batch = {
+        "outcomes": [
+            {"assignment_id": ids["Bram"], "status": "done"},
+            {"assignment_id": ids["Anna"], "status": "no_show"},
+        ]
+    }
+    response = client.post(f"/api/clubs/{club_id}/outcomes", json=batch, headers=headers)
+    assert response.status_code == 409
+
+    ledger = client.get(f"/api/clubs/{club_id}/ledger", headers=headers).json()
+    assert len(ledger["entries"]) == 1  # only Anna's earlier entry
+    statuses = {
+        a["member_name"]: a["status"]
+        for a in client.get(f"/api/clubs/{club_id}/assignments", headers=headers).json()
+    }
+    assert statuses == {"Anna": "done", "Bram": "assigned"}
+
+
+def test_check_in_only_for_this_clubs_assignments(client):
+    club_id, headers, ids = shift_for_two(client)
+    other_id, other_headers = make_club(client)
+    one = {"outcomes": [{"assignment_id": ids["Anna"], "status": "done"}]}
+
+    assert (
+        client.post(f"/api/clubs/{club_id}/outcomes", json=one, headers=other_headers).status_code
+        == 403
+    )
+    assert (
+        client.post(f"/api/clubs/{other_id}/outcomes", json=one, headers=other_headers).status_code
+        == 404
+    )
+
+    url = f"/api/clubs/{club_id}/outcomes"
+    assert client.post(url, json={"outcomes": []}, headers=headers).status_code == 422
+    twice = {"outcomes": one["outcomes"] * 2}
+    assert client.post(url, json=twice, headers=headers).status_code == 422
+
+
+def test_schedule_one_week_at_a_time(client):
+    club_id, headers = make_club(client)
+    anna = add_member(client, club_id, headers, "Anna")
+    shift_type = client.post(
+        f"/api/clubs/{club_id}/shift-types", json={"name": "Bar", "weight": 3}, headers=headers
+    ).json()
+    shifts = [
+        client.post(
+            f"/api/clubs/{club_id}/shifts",
+            json={
+                "shift_type_id": shift_type["id"],
+                "starts_at": future_saturday(7, weeks=week),
+                "ends_at": future_saturday(10, weeks=week),
+                "slots": 1,
+            },
+            headers=headers,
+        ).json()
+        for week in (0, 1)
+    ]
+    client.put(
+        f"/api/me/{anna['access_token']}/availability",
+        json={"shift_ids": [s["id"] for s in shifts]},
+    )
+
+    url = f"/api/clubs/{club_id}/schedule"
+    this_week = {"from": future_saturday(0), "to": future_saturday(0, weeks=1)}
+    published = client.post(f"{url}/publish", params=this_week, headers=headers).json()
+    assert [a["shift_id"] for a in published["assignments"]] == [shifts[0]["id"]]
+    assert published["unfilled"] == []  # next week isn't part of this run
+
+    # Without a range, everything upcoming that is still open.
+    rest = client.post(f"{url}/generate", headers=headers).json()
+    assert [a["shift_id"] for a in rest["assignments"]] == [shifts[1]["id"]]
+
+    backwards = {"from": this_week["to"], "to": this_week["from"]}
+    assert client.post(f"{url}/generate", params=backwards, headers=headers).status_code == 422
+    no_offset = {"from": "2030-01-07T00:00:00"}
+    assert client.post(f"{url}/generate", params=no_offset, headers=headers).status_code == 422

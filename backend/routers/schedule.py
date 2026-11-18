@@ -1,8 +1,11 @@
 """Generating, publishing and listing a club's schedule."""
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import AwareDatetime
 from sqlmodel import func, select
 
 from database import save
@@ -24,17 +27,40 @@ from solver import solve_greedy
 router = APIRouter(prefix="/api/clubs/{club_id}", tags=["schedule"])
 
 
+@dataclass(frozen=True)
+class Window:
+    starts_from: datetime | None
+    starts_before: datetime | None
+
+
+def shift_window(
+    starts_from: Annotated[AwareDatetime | None, Query(alias="from")] = None,
+    starts_before: Annotated[AwareDatetime | None, Query(alias="to")] = None,
+) -> Window:
+    """Optional ?from=&to= to fill one week at a time. 'to' is exclusive: next Monday 00:00."""
+    if starts_from and starts_before and starts_before <= starts_from:
+        raise HTTPException(status_code=422, detail="'to' must be after 'from'")
+    return Window(starts_from, starts_before)
+
+
+ShiftWindow = Annotated[Window, Depends(shift_window)]
+
+
 @router.post("/schedule/generate")
-def generate_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -> Proposal:
+def generate_schedule(
+    club_id: int, session: SessionDep, club: CoordinatorClub, window: ShiftWindow
+) -> Proposal:
     """Show what the solver would do. Saves nothing."""
-    problem = build_problem(club_id, session)
+    problem = build_problem(club_id, session, window.starts_from, window.starts_before)
     return to_proposal(problem, solve_greedy(problem))
 
 
 @router.post("/schedule/publish")
-def publish_schedule(club_id: int, session: SessionDep, club: CoordinatorClub) -> Proposal:
+def publish_schedule(
+    club_id: int, session: SessionDep, club: CoordinatorClub, window: ShiftWindow
+) -> Proposal:
     """Run the solver and save the result as assignments."""
-    problem = build_problem(club_id, session)
+    problem = build_problem(club_id, session, window.starts_from, window.starts_before)
     result = solve_greedy(problem)
     for shift_id, member_id in result.assignments:
         session.add(Assignment(shift_id=shift_id, member_id=member_id))
