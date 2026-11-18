@@ -27,6 +27,11 @@ import {
 const props = defineProps<{ clubId: string; token: string; week: string }>()
 const clubId = computed(() => Number(props.clubId))
 const { showNotice } = useNotice()
+const shiftsLink = computed(() => ({
+  name: 'members',
+  params: { clubId: props.clubId, token: props.token },
+  query: { section: 'shifts' },
+}))
 
 // The week from the URL ("2026-W48"). Generate and Publish only touch this week.
 const clubWeek = computed(() => weekFromKey(props.week))
@@ -268,7 +273,7 @@ onMounted(load)
 
       <p v-if="shifts.length === 0" class="muted">
         No shifts this week.
-        <RouterLink class="text-link" :to="{ name: 'setup', params: { clubId, token } }"
+        <RouterLink class="text-link" :to="shiftsLink"
           >Add shifts</RouterLink
         >
         to plan it.
