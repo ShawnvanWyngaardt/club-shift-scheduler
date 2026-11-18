@@ -56,7 +56,7 @@ const router = createRouter({
 
 router.afterEach((to) => {
   const page = to.meta.title as string | undefined
-  document.title = page ? `${page} · Club Shift Scheduler` : 'Club Shift Scheduler'
+  document.title = page ? `${page} | Club Shift Scheduler` : 'Club Shift Scheduler'
 })
 
 export default router

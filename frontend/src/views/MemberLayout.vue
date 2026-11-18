@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { onMounted, ref } from 'vue'
 import { api, ApiError, type MemberProfile } from '@/api'
+import { useSlidingTabBar } from '@/composables/useSlidingTabBar'
 import NotFound from '@/views/NotFound.vue'
 
 const props = defineProps<{ token: string }>()
@@ -21,38 +21,8 @@ async function load() {
 
 onMounted(load)
 
-/*
- * The sliding tab indicator. One bar for the whole nav, moved under the active
- * tab. This layout stays mounted when the tab changes (only the RouterView
- * swaps), so the bar survives and CSS can animate it from the old tab to the new one.
- */
-const route = useRoute()
 const tabs = ref<HTMLElement | null>(null)
-const bar = ref({ x: 0, y: 0, width: 0 })
-const animate = ref(false) // off for the first placement, so it doesn't slide in from the left
-
-function moveBar() {
-  const active = tabs.value?.querySelector<HTMLElement>('.router-link-exact-active')
-  if (!tabs.value || !active) return
-  const nav = tabs.value.getBoundingClientRect()
-  const tab = active.getBoundingClientRect()
-  bar.value = { x: tab.left - nav.left, y: tab.bottom - nav.top - 4, width: tab.width }
-}
-
-// Re-measure when the tab changes, and when the nav appears after loading.
-watch([() => route.name, tabs], async () => {
-  await nextTick() // wait for the new active class (and its bolder, wider text)
-  moveBar()
-  requestAnimationFrame(() => (animate.value = true))
-})
-
-// Re-measure when the nav changes size: window resize, tabs wrapping, fonts loading.
-const resize = new ResizeObserver(moveBar)
-watch(tabs, (el, old) => {
-  if (old) resize.unobserve(old)
-  if (el) resize.observe(el)
-})
-onBeforeUnmount(() => resize.disconnect())
+const { barStyle, animate } = useSlidingTabBar(tabs)
 </script>
 
 <template>
@@ -89,15 +59,7 @@ onBeforeUnmount(() => resize.disconnect())
     </header>
     <div class="page tab-head">
       <nav ref="tabs" aria-label="Your pages" class="tabs">
-        <span
-          class="tab-bar"
-          :class="{ animate }"
-          :style="{
-            width: `${bar.width}px`,
-            transform: `translate(${bar.x}px, ${bar.y}px)`,
-          }"
-          aria-hidden="true"
-        ></span>
+        <span class="tab-bar" :class="{ animate }" :style="barStyle" aria-hidden="true"></span>
         <div>
           <RouterLink :to="{ name: 'member', params: { token } }"
             >My availability</RouterLink
