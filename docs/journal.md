@@ -10,8 +10,9 @@ If you only read a few entries, read these:
 - [Tue 3 Nov: the member side answers back](#tue-3-nov-the-member-side-answers-back): turning those findings into changes, finding by finding.
 - [Wed 4 Nov: v0.2.0 out, and a privacy gap closed](#wed-4-nov-v020-out-and-a-privacy-gap-closed): finding that anyone could read a club's data, and fixing it as the first patch.
 - [Wed 11 Nov: a user test with several people finds a real bug](#wed-11-nov-a-user-test-with-several-people-finds-a-real-bug): a rule with a passing test that was still wrong.
+- [Wed 18 Nov: the coordinator redesign, built in one day](#wed-18-nov-the-coordinator-redesign-built-in-one-day): ten small pull requests, and a merge that held only half its change.
 
-**Where it stands:** v0.2.1 is live. The v0.3 redesign is under way: the landing page on desktop and the member side has had its first full pass; the coordinator screens are next.
+**Where it stands:** the v0.3 redesign is under way. The landing page on desktop and the member side have had their first full pass, and most of the coordinator redesign is merged. The Shifts screen and Start a club are next.
 
 ## Contents
 
@@ -47,6 +48,7 @@ If you only read a few entries, read these:
 - [Sun 15 Nov: plurals, a README picture and an SVG experiment](#sun-15-nov-plurals-a-readme-picture-and-an-svg-experiment)
 - [Mon 16 Nov: the member side gets its first full pass](#mon-16-nov-the-member-side-gets-its-first-full-pass)
 - [Tue 17 Nov: redesigning the coordinator side in a prototype](#tue-17-nov-redesigning-the-coordinator-side-in-a-prototype)
+- [Wed 18 Nov: the coordinator redesign, built in one day](#wed-18-nov-the-coordinator-redesign-built-in-one-day)
 
 ---
 
@@ -361,3 +363,20 @@ If you only read a few entries, read these:
 - **Found:** the prototype generates and publishes one week at a time; the API does every upcoming week at once. A decision for tomorrow.
 - **Learned:** reviewing a prototype as the user, element by element, surfaces product problems a visual pass misses. Most of today's changes removed things built for the prototype by Claude rather than added them.
 - **Next:** build it, in four pull requests: backend, foundations and Overview, Check-in, Members & shifts.
+
+## Wed 18 Nov: the coordinator redesign, built in one day
+
+- **Decided first:** five calls before any code. Generate and Publish work per week, with a date range in the backend. "Overview", not "Dashboard". Missed stays grey everywhere, with red only on the Check-in cross button, so colour goes to what went well. Empty slots on the week page are blue. Pipes as separators.
+- **Built:** the backend the redesign needed first: an endpoint that saves a whole shift's check-ins or none of them, and an optional week range on Generate and Publish (#62).
+- **Built:** the coordinator shell: Ghost colour tokens, button levels, three tabs with the sliding bar now shared with the member side, and a notice bar that stays for a minute (#63). The demo card moved into the header, with its two lists opening over the page instead of pushing it down (#64). Fixed the page jumping sideways between tabs with `scrollbar-gutter: stable`.
+- **Built:** Overview (#65), the Week page with preview and publish per week and a reason on every empty slot (#66), the "Who is available" grid with a new availability endpoint (#67), Check-in grouped by shift with mark then Save (#68), and Members with search, sort, paging, hidden codes and points history (#69). The Points tab is gone.
+- **Built:** endpoints to edit shift types and shifts, with rules: a started shift can't change, a shift with people on it keeps its time, and a new time clears who was available for it (#70, #71).
+- **Decision:** every slice had to leave the live app working, so the old Schedule page kept Generate and Publish until the new Week page could replace them.
+- **Decision:** don't show numbers the API can't back. The prototype showed how many members were available each week, but no endpoint returned that, so Overview went out without it and got it back a slice later from a real endpoint.
+- **Decision:** the coordinator side stays laptop-first, as it was reviewed. Check-in is the one task likely to happen on a phone, after a shift at the club, so it gets its own pass later.
+- **Went wrong:** CI failed on #66. A file the tests import used `Array.at`, and the TypeScript settings for the tests don't include it. Replaced it with plain indexing.
+- **Went wrong:** #70 was merged with only the frontend half of its change: the client calls, without the endpoints they call. CI was green because nothing tested the missing half. It was caught by comparing main with the patch, the backend went in as #71, and CI then ran 47 backend tests instead of 43.
+- **Learned:** keeping each screen's logic in plain TypeScript functions makes it testable without a browser. Frontend unit tests went from 9 to 49 today.
+- **Learned:** a green build proves the code that's there works, not that the intended code is there. After a merge, check the PR's file list against what was meant to change.
+- **Also:** started the portfolio material. The case study draft now covers the build, with short copy, two diagrams, prototype frames, and a script that takes real screenshots from a running app.
+- **Next:** the Shifts screen (patch 0013) and a redesigned Start a club built around saving the coordinator link (0014), both ready to apply. Then before and after screenshots, and an end-to-end run with the member side on a phone.
