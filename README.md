@@ -16,8 +16,8 @@ Today, coordinators mostly rely on WhatsApp groups and outdated Excel sheets, wh
 
 1. The coordinator posts shifts for the coming weeks. Each shift type has a weight from 1 to 3; unpopular shifts, like the early Saturday bar, weigh more.
 2. Members open a personal link, with no account or password, and tick the shifts they can do. Each shift shows the points it earns.
-3. The coordinator generates a schedule. A solver assigns shifts fairly: members with the fewest points this season go first. Unfilled slots are shown first, so the coordinator knows who to chase.
-4. After the shifts happen, the coordinator marks each one done or no-show. That writes an entry in a points ledger.
+3. The coordinator fills one week at a time: a preview first, then publish. A solver assigns shifts fairly: members with the fewest points this season go first. Every slot it can't fill says why, so the coordinator knows who to chase.
+4. After the shifts happen, the coordinator checks people in, shift by shift: each person did the shift or missed it. A shift is saved whole or not at all, and each check-in writes an entry in a points ledger.
 5. The next schedule uses the new balances. People who take on the unpopular shifts earn priority later; people who skip them don't.
 
 ## Tech stack
@@ -37,6 +37,9 @@ Today, coordinators mostly rely on WhatsApp groups and outdated Excel sheets, wh
 - **Personal links instead of accounts:** authentication would have taken the whole week. The trade-off: anyone with a link can use it.
 - **Append-only points ledger:** balances are calculated from entries, never stored, so every balance can be explained line by line.
 - **Times stored in UTC, shown in Amsterdam time:** caught by tests around the October clock change.
+- **A review step before anything that moves points:** check-ins are marked first and saved per shift, because a saved check-in can't be undone.
+
+How the app looks, reads and behaves, for people and AI tools building new screens: [design.md](design.md).
 
 ## Run it locally
 
@@ -66,7 +69,7 @@ Open the links the seed printed:
 
 **Tests:** `uv run pytest` in `backend`, and `npm run test:unit -- --run` in `frontend`.
 
-## Known limitations (as on 4 November 2026)
+## Known limitations (as on 19 November 2026)
 
 - **Links are the login.** Anyone with a member or coordinator link has that access. There are no accounts and no way to replace a leaked link yet.
 - **No notifications.** Members aren't told when they're given a shift or taken off one. The coordinator shares links and news through WhatsApp.
@@ -74,14 +77,18 @@ Open the links the seed printed:
 - **The solver is greedy.** It is fair and explainable, not mathematically optimal. A constraint solver (CP-SAT) is on the list.
 - **No season reset.** Points keep adding up until a reset exists.
 - **No change history.** Reassigning or removing someone isn't logged.
+- **Check-ins can be saved before a shift starts.** Kept for testing and the demo, where every shift is in the future; a real club should only check in afterwards.
+- **The coordinator side is laptop-first.** It works on a phone, but hasn't been designed for one yet. Check-in is first in line for a phone pass.
 - **Tests run on SQLite, production on Postgres.** CI doesn't catch Postgres-only differences yet.
 - **Demo clubs are deleted after 24 hours,** and the free hosting tier can make the first load after a quiet spell slow.
 
 ## What's next
 
-- Expand on the functionality and remove limitations
-- Improve on the overall design and user experience in the coming week/s
-- Make it possible to send links from the coordinator screen
+- Check-in designed for a phone, for coordinators checking people in at the club
+- A rule for repeat no-shows: today a missed shift moves someone up in line
+- Show which members haven't answered yet, apart from those who aren't available
+- Refuse check-ins before a shift has started, outside the demo
+- A dark mode for the coordinator side
 - Shared scoreboard screen for members
 - ....any suggestions welcome
 
