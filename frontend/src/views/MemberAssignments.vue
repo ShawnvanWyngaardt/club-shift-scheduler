@@ -103,7 +103,7 @@ onMounted(load)
               />
             </svg>
             <span>
-              Shifts go to members who said they could do them, and those with the fewest
+              Shifts go to members who are available for them, and those with the fewest
               points go first.
             </span>
           </p>

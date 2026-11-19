@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   amsterdamToIso,
+  clubDateInput,
   formatDay,
   formatShortDay,
   formatTime,
@@ -23,6 +24,13 @@ describe('time formatting', () => {
 
   it('uses Amsterdam winter time after the clocks change', () => {
     expect(formatTimeRange('2026-10-31T06:00:00Z', '2026-10-31T10:00:00Z')).toBe('07:00 – 11:00')
+  })
+
+  it('fills date and time inputs on the club clock, so an edit saves the same moment', () => {
+    // 00:30 on Sunday in Amsterdam is still Saturday in UTC.
+    const iso = '2026-11-28T23:30:00Z'
+    expect([clubDateInput(iso), formatTime(iso)]).toEqual(['2026-11-29', '00:30'])
+    expect(amsterdamToIso(clubDateInput(iso), formatTime(iso))).toBe('2026-11-28T23:30:00.000Z')
   })
 
   it('has short forms for narrow column headers', () => {

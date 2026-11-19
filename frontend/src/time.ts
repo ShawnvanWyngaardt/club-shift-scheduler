@@ -55,6 +55,9 @@ const shortDateFormat = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
 })
 
+/** "2026-11-28": a moment as the club's calendar date, for a date input. */
+export const clubDateInput = (iso: string) => isoDateFormat.format(new Date(iso))
+
 /** The club's calendar date for a moment, as midnight UTC, so date sums ignore clock changes. */
 function clubDate(iso: string): Date {
   const [year = 1970, month = 1, day = 1] = isoDateFormat.format(new Date(iso)).split('-').map(Number)

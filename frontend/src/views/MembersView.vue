@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { coordinatorApi, type ShiftTypeInfo } from '@/api'
+import { coordinatorApi } from '@/api'
 import MemberList from '@/components/MemberList.vue'
-import ShiftsSection from '@/components/setup/ShiftsSection.vue'
-import ShiftTypesSection from '@/components/setup/ShiftTypesSection.vue'
+import ShiftList from '@/components/ShiftList.vue'
 
 const props = defineProps<{ clubId: string; token: string }>()
 
@@ -19,8 +18,9 @@ function show(next: 'members' | 'shifts') {
   router.replace({ query: next === 'shifts' ? { section: next } : {} })
 }
 
+// The counts on the section buttons. Each list updates its own count as it changes.
 const memberCount = ref<number | null>(null)
-const shiftTypes = ref<ShiftTypeInfo[]>([])
+const typeCount = ref<number | null>(null)
 
 async function loadCounts() {
   const id = Number(props.clubId)
@@ -29,15 +29,7 @@ async function loadCounts() {
     coordinatorApi.shiftTypes(id),
   ])
   if (links.status === 'fulfilled') memberCount.value = links.value.length
-  if (types.status === 'fulfilled') shiftTypes.value = types.value
-}
-
-async function loadShiftTypes() {
-  try {
-    shiftTypes.value = await coordinatorApi.shiftTypes(Number(props.clubId))
-  } catch {
-    shiftTypes.value = []
-  }
+  if (types.status === 'fulfilled') typeCount.value = types.value.length
 }
 
 onMounted(loadCounts)
@@ -64,8 +56,10 @@ onMounted(loadCounts)
         >
       </button>
       <button type="button" :aria-pressed="section === 'shifts'" @click="show('shifts')">
-        Shifts<span class="pipe" aria-hidden="true">|</span>{{ shiftTypes.length }}
-        {{ shiftTypes.length === 1 ? 'type' : 'types' }}
+        Shifts<template v-if="typeCount !== null"
+          ><span class="pipe" aria-hidden="true">|</span>{{ typeCount }}
+          {{ typeCount === 1 ? 'type' : 'types' }}</template
+        >
       </button>
     </div>
 
@@ -76,16 +70,7 @@ onMounted(loadCounts)
       @count="memberCount = $event"
     />
 
-    <!-- Restyled in the next slice -->
-    <template v-else>
-      <ShiftTypesSection
-        :club-id="clubId"
-        :token="token"
-        :shift-types="shiftTypes"
-        @changed="loadShiftTypes"
-      />
-      <ShiftsSection :club-id="clubId" :token="token" :shift-types="shiftTypes" />
-    </template>
+    <ShiftList v-else :club-id="clubId" :token="token" @count="typeCount = $event" />
   </main>
 </template>
 
