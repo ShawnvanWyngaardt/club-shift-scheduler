@@ -91,9 +91,9 @@ onBeforeUnmount(() => {
         <li>
           Open the member page as {{ visitor.name }}, tick the shifts you'd do, and save.
         </li>
-        <li>Come back to this tab and generate a schedule.</li>
+        <li>Come back to this tab, open a week and generate a preview.</li>
         <li>
-          Publish it, then open the member's <strong>My shifts</strong> tab to see what
+          Publish the week, then open the member's <strong>My shifts</strong> tab to see what
           you were given and why.
         </li>
       </ol>
