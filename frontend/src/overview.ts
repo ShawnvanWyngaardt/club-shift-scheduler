@@ -122,7 +122,7 @@ export function needsYou(
       needs.push({
         kind: 'go',
         title: `Week ${s.week.number} isn't published yet`,
-        text: `${plural(s.shifts, 'shift', 'shifts')}, ${plural(s.slots, 'slot', 'slots')}. Members see their shifts once you publish.`,
+        text: `${plural(s.shifts, 'shift', 'shifts')}, ${plural(s.slots, 'slot', 'slots')}.`,
         action: 'Fill slots',
         to: { name: 'week', week: s.week.key },
       })

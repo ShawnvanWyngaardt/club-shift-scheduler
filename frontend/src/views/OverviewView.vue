@@ -111,7 +111,10 @@ onMounted(load)
       <div class="page-head">
         <div>
           <h1>Overview</h1>
-          <p>The next four weeks, and what needs you first.</p>
+          <p>
+            The next four weeks, and what needs you first. Members see their shifts once
+            you publish.
+          </p>
         </div>
         <RouterLink class="btn btn-ghost" :to="shiftsLink">Add shifts</RouterLink>
       </div>
@@ -139,8 +142,8 @@ onMounted(load)
               <div>
                 <strong>You're all caught up</strong>
                 <span v-if="lastShift">
-                  Every slot in the next four weeks has someone and everyone is checked in. Shifts
-                  are planned until {{ formatDay(lastShift) }}, so
+                  Every slot in the next four weeks has someone and everyone is checked
+                  in. Shifts are planned until {{ formatDay(lastShift) }}, so
                   <RouterLink class="text-link" :to="shiftsLink"
                     >add the next weeks</RouterLink
                   >
@@ -171,13 +174,22 @@ onMounted(load)
                 <span class="week-dates">{{ w.week.dates }}</span>
               </span>
               <span class="week-mid">
-                <span class="meter" :class="{ 'is-draft': !w.published }" aria-hidden="true">
+                <span
+                  class="meter"
+                  :class="{ 'is-draft': !w.published }"
+                  aria-hidden="true"
+                >
                   <i :style="{ width: `${percentFilled(w)}%` }"></i>
                 </span>
                 <span class="week-facts">
                   <template v-if="w.shifts">
-                    <span><b>{{ w.filled }} of {{ w.slots }}</b> slots filled</span>
-                    <span><b>{{ w.shifts }}</b> {{ w.shifts === 1 ? 'shift' : 'shifts' }}</span>
+                    <span
+                      ><b>{{ w.filled }} of {{ w.slots }}</b> slots filled</span
+                    >
+                    <span
+                      ><b>{{ w.shifts }}</b>
+                      {{ w.shifts === 1 ? "shift" : "shifts" }}</span
+                    >
                     <span>
                       <b>{{ w.available }} of {{ balances.length }}</b> available
                     </span>
@@ -200,9 +212,12 @@ onMounted(load)
                 <span>Slots filled</span><b>{{ totals.filled }} / {{ totals.slots }}</b>
               </div>
               <div class="stat-row">
-                <span>Weeks published</span><b>{{ totals.published }} / {{ weeks.length }}</b>
+                <span>Weeks published</span
+                ><b>{{ totals.published }} / {{ weeks.length }}</b>
               </div>
-              <div class="stat-row"><span>People to check in</span><b>{{ waiting }}</b></div>
+              <div class="stat-row">
+                <span>People to check in</span><b>{{ waiting }}</b>
+              </div>
             </div>
           </section>
 
@@ -223,6 +238,10 @@ onMounted(load)
 </template>
 
 <style scoped>
+* {
+  transition: all 0.25s ease-in-out;
+}
+
 .overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -368,7 +387,7 @@ onMounted(load)
   gap: 32px;
 }
 .panel {
-  padding: 20px;
+  padding: 12px 20px;
   background: var(--surface);
   border-radius: var(--r);
   box-shadow: var(--shadow);

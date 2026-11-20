@@ -63,7 +63,10 @@ async function save(group: CheckInGroup) {
       marks.delete(p.id)
     }
     updateWaiting(assignments.value)
-    const notice = savedNotice(group.shiftType, outcomes.map((o) => o.status))
+    const notice = savedNotice(
+      group.shiftType,
+      outcomes.map((o) => o.status),
+    )
     showNotice(notice.title, notice.detail)
   } catch (error) {
     const text = error instanceof ApiError ? error.message : 'Could not reach the server.'
@@ -91,13 +94,14 @@ onMounted(load)
 
     <template v-else>
       <div class="page-head">
-        <div><h1>Who did their shift?</h1></div>
+        <h1>Who did their shift?</h1>
       </div>
 
       <div class="checkin-legend">
         <p class="legend-final">
-          Mark each person, then press Save for that shift. You can change your marks until you
-          save; after that they're final, so check people in after the shift has happened.
+          Mark each person, then press Save for that shift. You can change your marks
+          until you save; after that they're final, so check people in after the shift has
+          happened.
         </p>
         <p>
           <span class="mini tick" aria-hidden="true">
@@ -106,8 +110,9 @@ onMounted(load)
             </svg>
           </span>
           <span>
-            <b>Did the shift.</b> The shift's points are added to their balance, so they move
-            further back in line for the next shifts. They see it as Done on their My shifts page.
+            <b>Did the shift.</b> The shift's points are added to their balance, so they
+            move further back in line for the next shifts. They see it as Done on their My
+            shifts page.
           </span>
         </p>
         <p>
@@ -117,8 +122,8 @@ onMounted(load)
             </svg>
           </span>
           <span>
-            <b>Missed it.</b> The shift's points come off their balance, which moves them up in
-            line. They see it as Missed on their My shifts page.
+            <b>Missed it.</b> The shift's points come off their balance, which moves them
+            up in line. They see it as Missed on their My shifts page.
           </span>
         </p>
       </div>
@@ -141,8 +146,8 @@ onMounted(load)
       <details v-if="groups.upcoming.length" class="upcoming">
         <summary>Upcoming shifts ({{ groups.upcoming.length }})</summary>
         <p class="note">
-          These haven't happened yet. Checking in early is allowed, so you can try the page out,
-          but a check-in is final.
+          These haven't happened yet. Checking in early is allowed, so you can try the
+          page out, but a check-in is final.
         </p>
         <CheckInShift
           v-for="group in groups.upcoming"
@@ -160,6 +165,10 @@ onMounted(load)
 </template>
 
 <style scoped>
+.page-head h1 {
+  margin-bottom: 0;
+}
+
 .checkin-legend {
   display: flex;
   flex-direction: column;

@@ -76,13 +76,18 @@ const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
         <div class="wrap topbar-inner">
           <div class="head-row">
             <div class="club">
-              <span class="eyebrow">Coordinator</span>
+              <span class="eyebrow">Coordinator Dashboard</span>
               <span class="club-name">{{ club.name }}</span>
             </div>
             <DemoPanel v-if="demo" :demo="demo" />
           </div>
           <nav ref="tabs" aria-label="Coordinator sections" class="tabs">
-            <span class="tab-bar" :class="{ animate }" :style="barStyle" aria-hidden="true"></span>
+            <span
+              class="tab-bar"
+              :class="{ animate }"
+              :style="barStyle"
+              aria-hidden="true"
+            ></span>
             <RouterLink
               class="tab"
               :class="{ active: section === 'overview' }"
@@ -132,7 +137,7 @@ const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
 .head-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
@@ -185,8 +190,7 @@ const { barStyle, animate } = useSlidingTabBar(tabs, '.tab.active')
   pointer-events: none;
 }
 .tab-bar.animate {
-  transition:
-    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1),
     width 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @media (prefers-reduced-motion: reduce) {
