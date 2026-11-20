@@ -1,0 +1,6 @@
+{
+  "tokenSources": [
+    "frontend/src/assets/main.css",
+    "frontend/src/assets/coordinator.css"
+  ]
+}
